@@ -9,39 +9,55 @@
       font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
       margin: 0;
       padding: 0;
-      background: #fafafa;
+      background: #f9f9f9;
     }
+
     .container {
       max-width: 520px;
-      margin: 60px auto;
+      margin: 40px auto;
       padding: 24px;
     }
+
     .card {
-      background: white;
-      border: 1px solid #e5e5e5;
+      background: #fff;
       border-radius: 14px;
-      box-shadow: 0 2px 16px rgba(0,0,0,0.06);
       padding: 24px;
+      box-shadow: 0 2px 16px rgba(0, 0, 0, 0.06);
     }
+
+    .logo {
+      width: 160px;
+      margin-bottom: 16px;
+      display: block;
+    }
+
     h1 {
-      font-size: 1.5rem;
-      margin: 0 0 12px;
+      font-size: 1.8rem;
+      text-transform: uppercase;
+      font-weight: 700;
+      margin-bottom: 16px;
+      color: #000;
     }
+
     p {
-      color: #5a5a5a;
+      color: #4b5563;
     }
+
     label {
       display: block;
       margin: 14px 0 6px;
       font-weight: 600;
     }
-    input[type="text"] {
+
+    input[type="text"],
+    input[type="url"] {
       width: 100%;
       padding: 12px;
       border: 1px solid #d1d5db;
       border-radius: 10px;
       font-size: 1rem;
     }
+
     button {
       margin-top: 18px;
       padding: 12px 16px;
@@ -53,39 +69,49 @@
       cursor: pointer;
       width: 100%;
     }
-    .notice {
-      background: #f1f5f9;
-      padding: 10px 12px;
-      border-radius: 8px;
-      font-size: 0.9rem;
-      margin-bottom: 16px;
-      color: #475569;
+
+    button:disabled {
+      opacity: 0.6;
+      cursor: not-allowed;
     }
+
+    .notice {
+      background: #f5f5f5;
+      padding: 10px;
+      border-radius: 10px;
+      font-size: 0.95rem;
+      color: #6b7280;
+      margin-bottom: 14px;
+    }
+
+    .footer {
+      margin-top: 20px;
+      font-size: 0.9rem;
+      color: #6b7280;
+    }
+
     .success {
       color: #16a34a;
-      font-weight: 600;
+      margin-top: 12px;
     }
+
     .error {
       color: #dc2626;
-      font-weight: 600;
-    }
-    .footer {
       margin-top: 12px;
-      font-size: 0.9rem;
-      color: #64748b;
-      text-align: center;
     }
   </style>
 </head>
 <body>
   <div class="container">
     <div class="card">
-      <h1>Activer ma plaque</h1>
-      <p>Entrez votre <strong>numéro de plaque</strong> et votre <strong>lien Google</strong> pour relier votre plaque à votre page.</p>
+      <img src="/logo.png" alt="Logo" class="logo" />
+      <h1>ACTIVER MA PLAQUE</h1>
+
+      <p>Entrez votre <strong>numéro de plaque</strong> et votre
+        <strong>lien Google</strong> pour relier votre plaque à votre page.</p>
 
       <div class="notice">
-        Exemple d’URL Google :
-        <code>https://g.page/nom-de-votre-commerce</code>
+        Exemple d’URL Google : <code>https://g.page/nom-de-votre-commerce</code>
       </div>
 
       <form id="activation-form">
@@ -93,20 +119,12 @@
         <input id="id_plaque" name="id_plaque" type="text" placeholder="ex: 0001" required />
 
         <label for="url_google">Lien Google</label>
-        <input
-          id="url_google"
-          name="url_google"
-          type="text"
-          placeholder="https://example.com"
-          required
-          pattern="https?://.+"
-          title="Entrez une URL valide commençant par http ou https"
-        />
+        <input id="url_google" name="url_google" type="url" placeholder="https://example.com" required />
 
         <button id="submit-btn" type="submit">Valider l’activation</button>
-        <p id="message"></p>
       </form>
 
+      <p id="message" class=""></p>
       <p class="footer">Besoin d’aide ? Contactez le support.</p>
     </div>
   </div>
@@ -135,18 +153,18 @@
         const data = await res.json();
 
         if (res.ok) {
-          msg.textContent = '✅ Plaque activée avec succès. Votre QR/NFC pointe désormais vers votre page Google.';
+          msg.textContent = data.message || '✅ Plaque activée avec succès.';
           msg.className = 'success';
         } else {
-          msg.textContent = '❌ ' + (data.error || 'Erreur lors de l’activation.');
+          msg.textContent = '❌ ' + (data.error || 'Erreur inconnue.');
           msg.className = 'error';
         }
       } catch (err) {
-        msg.textContent = '❌ Erreur interne. Veuillez réessayer.';
+        msg.textContent = '❌ Erreur de connexion.';
         msg.className = 'error';
+      } finally {
+        btn.disabled = false;
       }
-
-      btn.disabled = false;
     });
   </script>
 </body>
