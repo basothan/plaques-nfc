@@ -5,21 +5,76 @@
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Activer ma plaque — Plaques NFC</title>
   <style>
-    body { font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif; margin: 0; padding: 0; }
-    .container { max-width: 520px; margin: 40px auto; padding: 24px; }
-    .card { border: 1px solid #e5e7eb; border-radius: 14px; padding: 24px; box-shadow: 0 2px 16px rgba(0,0,0,0.06); }
-    h1 { font-size: 1.5rem; margin: 0 0 12px; }
-    p { color: #4b5563; }
-    label { display:block; margin: 14px 0 6px; font-weight: 600; }
-    input[type="text"], input[type="url"] {
-      width:100%; padding:12px; border:1px solid #d1d5db; border-radius:10px; font-size: 1rem;
+    body {
+      font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
+      margin: 0;
+      padding: 0;
+      background: #fafafa;
     }
-    button { margin-top: 18px; padding: 12px 16px; border: 0; border-radius: 10px; background: black; color: white; font-weight: 700; cursor: pointer; }
-    button:disabled { opacity: .6; cursor: not-allowed; }
-    .notice { background: #f1f5f9; padding: 10px 12px; border-radius: 10px; font-size: .95rem; }
-    .footer { margin-top: 18px; font-size: .9rem; color: #6b7280; }
-    .success { color: #065f46; }
-    .error { color: #7f1d1d; }
+    .container {
+      max-width: 520px;
+      margin: 60px auto;
+      padding: 24px;
+    }
+    .card {
+      background: white;
+      border: 1px solid #e5e5e5;
+      border-radius: 14px;
+      box-shadow: 0 2px 16px rgba(0,0,0,0.06);
+      padding: 24px;
+    }
+    h1 {
+      font-size: 1.5rem;
+      margin: 0 0 12px;
+    }
+    p {
+      color: #5a5a5a;
+    }
+    label {
+      display: block;
+      margin: 14px 0 6px;
+      font-weight: 600;
+    }
+    input[type="text"] {
+      width: 100%;
+      padding: 12px;
+      border: 1px solid #d1d5db;
+      border-radius: 10px;
+      font-size: 1rem;
+    }
+    button {
+      margin-top: 18px;
+      padding: 12px 16px;
+      border: 0;
+      border-radius: 10px;
+      background: black;
+      color: white;
+      font-weight: 700;
+      cursor: pointer;
+      width: 100%;
+    }
+    .notice {
+      background: #f1f5f9;
+      padding: 10px 12px;
+      border-radius: 8px;
+      font-size: 0.9rem;
+      margin-bottom: 16px;
+      color: #475569;
+    }
+    .success {
+      color: #16a34a;
+      font-weight: 600;
+    }
+    .error {
+      color: #dc2626;
+      font-weight: 600;
+    }
+    .footer {
+      margin-top: 12px;
+      font-size: 0.9rem;
+      color: #64748b;
+      text-align: center;
+    }
   </style>
 </head>
 <body>
@@ -27,27 +82,35 @@
     <div class="card">
       <h1>Activer ma plaque</h1>
       <p>Entrez votre <strong>numéro de plaque</strong> et votre <strong>lien Google</strong> pour relier votre plaque à votre page.</p>
-    <input
-  id="url_google"
-  name="url_google"
-  type="text"
-  placeholder="https://example.com"
-  required
-  pattern="https?://.+"
-  title="Entrez une URL valide commençant par http ou https"
-/>
 
-  type="url"
-  placeholder="https://example.com"
-  required
-  title="Collez n'importe quelle URL valide (https://...)"
-/>
+      <div class="notice">
+        Exemple d’URL Google :
+        <code>https://g.page/nom-de-votre-commerce</code>
+      </div>
+
+      <form id="activation-form">
+        <label for="id_plaque">Numéro de plaque</label>
+        <input id="id_plaque" name="id_plaque" type="text" placeholder="ex: 0001" required />
+
+        <label for="url_google">Lien Google</label>
+        <input
+          id="url_google"
+          name="url_google"
+          type="text"
+          placeholder="https://example.com"
+          required
+          pattern="https?://.+"
+          title="Entrez une URL valide commençant par http ou https"
+        />
+
         <button id="submit-btn" type="submit">Valider l’activation</button>
+        <p id="message"></p>
       </form>
-      <p id="message" class=""></p>
+
       <p class="footer">Besoin d’aide ? Contactez le support.</p>
     </div>
   </div>
+
   <script>
     const form = document.getElementById('activation-form');
     const msg = document.getElementById('message');
@@ -68,18 +131,22 @@
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ id_plaque, url_google })
         });
-        const data = await res.json();
-        if (!res.ok) throw new Error(data.error || 'Erreur serveur');
 
-        msg.textContent = '✅ Plaque activée avec succès. Votre QR/NFC pointera désormais vers votre page Google.';
-        msg.className = 'success';
-        form.reset();
+        const data = await res.json();
+
+        if (res.ok) {
+          msg.textContent = '✅ Plaque activée avec succès. Votre QR/NFC pointe désormais vers votre page Google.';
+          msg.className = 'success';
+        } else {
+          msg.textContent = '❌ ' + (data.error || 'Erreur lors de l’activation.');
+          msg.className = 'error';
+        }
       } catch (err) {
-        msg.textContent = '❌ ' + err.message;
+        msg.textContent = '❌ Erreur interne. Veuillez réessayer.';
         msg.className = 'error';
-      } finally {
-        btn.disabled = false;
       }
+
+      btn.disabled = false;
     });
   </script>
 </body>
