@@ -1,24 +1,37 @@
 export default async function handler(req, res) {
+  // 1) Méthode autorisée
   if (req.method !== 'POST') {
-    return res.status(405).json({ error: 'Méthode non autorisée' });
+    return res.status(405).json({ error: 'METHOD_NOT_ALLOWED', detail: 'Utilisez POST' });
   }
 
-  const { id_plaque, url_google } = req.body;
-
+  // 2) Entrées requises (+ petit check URL)
+  const { id_plaque, url_google } = req.body || {};
   if (!id_plaque || !url_google) {
-    return res.status(400).json({ error: 'Champs manquants: id_plaque et url_google sont requis.' });
+    return res.status(400).json({
+      error: 'VALIDATION_ERROR',
+      detail: 'id_plaque et url_google sont requis.'
+    });
+  }
+  if (!/^https?:\/\//i.test(url_google)) {
+    return res.status(400).json({
+      error: 'INVALID_URL',
+      detail: 'url_google doit commencer par http(s)://'
+    });
   }
 
-  // Variables d'environnement
-  const apiUrl = process.env.BASEROW_API_URL || 'https://api.baserow.io';
+  // 3) ENV
+  const apiUrl  = (process.env.BASEROW_API_URL || 'https://api.baserow.io').replace(/\/$/, '');
   const tableId = process.env.BASEROW_TABLE_ID;
-  const token = process.env.BASEROW_TOKEN;
+  const token   = process.env.BASEROW_TOKEN;
 
   if (!tableId || !token) {
-    return res.status(500).json({ error: 'Configuration manquante (BASEROW_TABLE_ID ou BASEROW_TOKEN).' });
+    return res.status(500).json({
+      error: 'CONFIG_MISSING',
+      detail: 'BASEROW_TABLE_ID ou BASEROW_TOKEN manquent dans Vercel.'
+    });
   }
 
-  // Fonction pour récupérer toutes les lignes
+  // Helper : GET toutes les lignes (avec noms de colonnes)
   async function fetchAllRows() {
     let results = [];
     let next = `${apiUrl}/api/database/rows/table/${tableId}/?user_field_names=true`;
@@ -27,66 +40,28 @@ export default async function handler(req, res) {
       const r = await fetch(next, {
         headers: { Authorization: `Token ${token}` }
       });
-
+      const text = await r.text();
       if (!r.ok) {
-        const txt = await r.text();
-        throw new Error(`Erreur API Baserow (GET): ${r.status} ${txt}`);
+        throw new Error(`GET ${r.status}: ${text}`);
       }
-
-      const data = await r.json();
+      const data = JSON.parse(text);
       results = results.concat(data.results || []);
       next = data.next;
     }
-
     return results;
   }
 
   try {
-    // 🔍 Étape 1 : Récupérer la ligne correspondant à la plaque
+    // 4) Récupérer la ligne correspondant à id_plaque
     const rows = await fetchAllRows();
-    const row = rows.find(r => String(r.id_plaque || '').trim() === id_plaque.trim());
+    const row = rows.find(r => String(r.id_plaque ?? '').trim() === String(id_plaque).trim());
 
     if (!row) {
-      return res.status(404).json({ error: 'Numéro de plaque introuvable.' });
+      return res.status(404).json({
+        error: 'PLAQUE_NOT_FOUND',
+        detail: `Aucune ligne avec id_plaque="${id_plaque}".`,
+        sampleHead: ['id','order','Name','id_plaque','url_google','actif','date_activation']
+      });
     }
 
-    if (row.actif === true) {
-      return res.status(400).json({ error: 'Plaque déjà activée.' });
-    }
-
-    // 🗓️ Étape 2 : Préparer la mise à jour
-    const today = new Date().toISOString().slice(0, 10); // YYYY-MM-DD
-
-    const patchUrl = `${apiUrl}/api/database/rows/table/${tableId}/${row.id}/?user_field_names=true`;
-    const patchRes = await fetch(patchUrl, {
-      method: 'PATCH',
-      headers: {
-        Authorization: `Token ${token}`,
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify({
-        url_google,
-        actif: true, // ✅ booléen, pas 'oui'
-        date_activation: today
-      })
-    });
-
-    if (!patchRes.ok) {
-      const txt = await patchRes.text();
-      throw new Error(`Erreur API Baserow (PATCH): ${patchRes.status} ${txt}`);
-    }
-
-    const updated = await patchRes.json();
-
-    // ✅ Succès
-    return res.status(200).json({
-      ok: true,
-      message: 'Plaque activée avec succès.',
-      updated
-    });
-
-  } catch (error) {
-    console.error('Erreur /api/activate.js →', error);
-    return res.status(500).json({ error: error.message || 'Erreur interne du serveur.' });
-  }
-}
+    if (row.actif ==
