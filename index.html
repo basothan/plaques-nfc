@@ -32,7 +32,13 @@
         <label for="id_plaque">Numéro de plaque</label>
         <input id="id_plaque" name="id_plaque" type="text" placeholder="ex: 0001" required />
         <label for="url_google">Lien Google</label>
-        <input id="url_google" name="url_google" type="url" placeholder="https://g.page/..." required />
+<input
+  id="url_google"
+  type="url"
+  placeholder="https://example.com"
+  required
+  title="Collez n'importe quelle URL valide (https://...)"
+/>
         <button id="submit-btn" type="submit">Valider l’activation</button>
       </form>
       <p id="message" class=""></p>
