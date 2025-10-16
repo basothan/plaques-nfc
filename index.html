@@ -27,13 +27,16 @@
     <div class="card">
       <h1>Activer ma plaque</h1>
       <p>Entrez votre <strong>numéro de plaque</strong> et votre <strong>lien Google</strong> pour relier votre plaque à votre page.</p>
-      <div class="notice">Exemple d’URL Google : <code>https://g.page/nom-de-votre-commerce</code></div>
-      <form id="activation-form">
-        <label for="id_plaque">Numéro de plaque</label>
-        <input id="id_plaque" name="id_plaque" type="text" placeholder="ex: 0001" required />
-        <label for="url_google">Lien Google</label>
-<input
+    <input
   id="url_google"
+  name="url_google"
+  type="text"
+  placeholder="https://example.com"
+  required
+  pattern="https?://.+"
+  title="Entrez une URL valide commençant par http ou https"
+/>
+
   type="url"
   placeholder="https://example.com"
   required
