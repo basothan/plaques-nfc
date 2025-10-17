@@ -8,24 +8,24 @@
 </head>
 
 <body class="bg-gray-50 flex items-center justify-center min-h-screen">
-  <div class="bg-white p-8 rounded-2xl shadow-md w-full max-w-md">
+  <div class="bg-white p-8 rounded-2xl shadow-md w-full max-w-md text-center">
 
-    <!-- HEADER AVEC LOGO + TITRE -->
-    <div class="flex items-center mb-6">
-      <img src="logo.png" alt="Basothan MyConnect Logo" class="h-10 mr-3">
+    <!-- LOGO + TITRE EN DESSOUS -->
+    <div class="flex flex-col items-center mb-6">
+      <img src="logo.png" alt="Basothan MyConnect Logo" class="h-12 mb-3">
       <h1 class="text-2xl font-bold text-gray-900 uppercase">Activer ma plaque</h1>
     </div>
 
-    <p class="text-gray-600 mb-6">
+    <p class="text-gray-600 mb-6 text-left">
       Entrez votre <strong>numéro de plaque</strong> et votre <strong>lien Google</strong> pour relier votre plaque à votre page.
     </p>
 
-    <div class="bg-gray-100 p-3 rounded-md mb-4 text-sm text-gray-700 font-mono">
+    <div class="bg-gray-100 p-3 rounded-md mb-4 text-sm text-gray-700 font-mono text-left">
       Exemple d’URL Google : https://g.page/nom-de-votre-commerce
     </div>
 
     <!-- FORMULAIRE -->
-    <form id="activationForm" class="space-y-4">
+    <form id="activationForm" class="space-y-4 text-left">
       <div>
         <label for="codePlaque" class="block text-gray-800 font-medium mb-1">Numéro de plaque</label>
         <input type="text" id="codePlaque" name="codePlaque" class="w-full border border-gray-300 rounded-lg px-3 py-2" required />
