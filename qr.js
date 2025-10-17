@@ -3,7 +3,6 @@
 
 module.exports = async (req, res) => {
   try {
-    // Autoriser le GET + OPTIONS proprement (évite soucis CORS)
     res.setHeader('Access-Control-Allow-Origin', '*');
     res.setHeader('Access-Control-Allow-Methods', 'GET,OPTIONS');
     if (req.method === 'OPTIONS') return res.status(204).end();
@@ -17,23 +16,18 @@ module.exports = async (req, res) => {
     const token   = process.env.BASEROW_TOKEN;
     if (!tableId || !token) return res.status(500).send('Server config error');
 
-    // Récupère jusqu’à 200 lignes; suffisant pour ~200 plaques
     const url = `${apiUrl}/api/database/rows/table/${tableId}/?size=200&user_field_names=true`;
     const r = await fetch(url, { headers: { Authorization: `Token ${token}` }});
     if (!r.ok) return res.status(500).send('Baserow list error');
     const data = await r.json();
 
-    // Match sur la colonne "code_plaque" (en majuscules)
     const code = String(id).toUpperCase().trim();
     const row = (data.results || []).find(x => String(x.code_plaque || '').toUpperCase().trim() === code);
     if (!row) return res.status(404).send('Plaque non trouvée');
-
     if (!row.url_google) return res.status(404).send('Lien non configuré');
 
-    // Redirection 302
     res.writeHead(302, { Location: row.url_google });
     return res.end();
-
   } catch (e) {
     console.error('QR_ERROR', e);
     return res.status(500).send('Internal error');
