@@ -1,64 +1,41 @@
-export default async function handler(req, res) {
-  const { id } = req.query || {};
-  if (!id) {
-    res.statusCode = 400;
-    res.setHeader('Content-Type', 'text/html; charset=utf-8');
-    return res.end(`<h1>Paramètre manquant</h1><p>Utilisez <code>?id=0001</code>.</p>`);
-  }
+// /api/qr.js  (CommonJS)
+// Ex: https://www.basothanmyconnect.fr/qr?id=A3HJ9  -> 302 vers url_google
 
-  const apiUrl = process.env.BASEROW_API_URL || 'https://api.baserow.io';
-  const tableId = process.env.BASEROW_TABLE_ID;
-  const token = process.env.BASEROW_TOKEN;
-
-  if (!tableId || !token) {
-    res.statusCode = 500;
-    res.setHeader('Content-Type', 'text/html; charset=utf-8');
-    return res.end(`<h1>Configuration manquante</h1><p>Variables BASEROW_TABLE_ID et BASEROW_TOKEN requises.</p>`);
-  }
-
-  async function fetchAllRows() {
-    let results = [];
-    let next = `${apiUrl}/api/database/rows/table/${tableId}/?user_field_names=true`;
-    while (next) {
-      const r = await fetch(next, {
-        headers: { Authorization: `Token ${token}` }
-      });
-      if (!r.ok) {
-        const t = await r.text();
-        throw new Error(`Erreur API Baserow (GET): ${r.status} ${t}`);
-      }
-      const data = await r.json();
-      results = results.concat(data.results || []);
-      next = data.next;
-    }
-    return results;
-  }
-
+module.exports = async (req, res) => {
   try {
-    const rows = await fetchAllRows();
-    const row = rows.find((row) => (row['id_plaque'] || '').trim() === String(id).trim());
+    // Autoriser le GET + OPTIONS proprement (évite soucis CORS)
+    res.setHeader('Access-Control-Allow-Origin', '*');
+    res.setHeader('Access-Control-Allow-Methods', 'GET,OPTIONS');
+    if (req.method === 'OPTIONS') return res.status(204).end();
+    if (req.method !== 'GET') return res.status(405).send('Method not allowed');
 
-    if (!row) {
-      res.statusCode = 404;
-      res.setHeader('Content-Type', 'text/html; charset=utf-8');
-      return res.end(`<h1>Plaque introuvable</h1><p>Aucune plaque avec l'identifiant <strong>${id}</strong>.</p>`);
-    }
-    const actif = (row['actif'] || '').toLowerCase() === 'oui';
-    const url = (row['url_google'] || '').trim();
+    const { id } = req.query || {};
+    if (!id) return res.status(400).send('Missing id');
 
-    if (!actif || !url) {
-      res.statusCode = 400;
-      res.setHeader('Content-Type', 'text/html; charset=utf-8');
-      return res.end(`<h1>Plaque non activée</h1><p>La plaque <strong>${id}</strong> n'est pas encore activée ou l'URL est manquante.</p>`);
-    }
+    const apiUrl  = process.env.BASEROW_API_URL || 'https://api.baserow.io';
+    const tableId = process.env.BASEROW_TABLE_ID;
+    const token   = process.env.BASEROW_TOKEN;
+    if (!tableId || !token) return res.status(500).send('Server config error');
+
+    // Récupère jusqu’à 200 lignes; suffisant pour ~200 plaques
+    const url = `${apiUrl}/api/database/rows/table/${tableId}/?size=200&user_field_names=true`;
+    const r = await fetch(url, { headers: { Authorization: `Token ${token}` }});
+    if (!r.ok) return res.status(500).send('Baserow list error');
+    const data = await r.json();
+
+    // Match sur la colonne "code_plaque" (en majuscules)
+    const code = String(id).toUpperCase().trim();
+    const row = (data.results || []).find(x => String(x.code_plaque || '').toUpperCase().trim() === code);
+    if (!row) return res.status(404).send('Plaque non trouvée');
+
+    if (!row.url_google) return res.status(404).send('Lien non configuré');
 
     // Redirection 302
-    res.writeHead(302, { Location: url });
+    res.writeHead(302, { Location: row.url_google });
     return res.end();
+
   } catch (e) {
-    console.error(e);
-    res.statusCode = 500;
-    res.setHeader('Content-Type', 'text/html; charset=utf-8');
-    return res.end(`<h1>Erreur interne</h1><pre>${e.message || e}</pre>`);
+    console.error('QR_ERROR', e);
+    return res.status(500).send('Internal error');
   }
-}
+};
