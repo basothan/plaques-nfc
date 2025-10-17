@@ -1,4 +1,5 @@
-export default async function handler(req, res) {
+// /api/debug.js  (CommonJS, aligne sur "code_plaque")
+module.exports = async (req, res) => {
   const apiUrl = process.env.BASEROW_API_URL || 'https://api.baserow.io';
   const tableId = process.env.BASEROW_TABLE_ID;
   const token = process.env.BASEROW_TOKEN;
@@ -7,7 +8,7 @@ export default async function handler(req, res) {
     return res.status(500).json({ error: 'ENV manquantes', tableId, hasToken: !!token });
   }
 
-  const qId = (req.query.id || '').toString().trim();
+  const qId = (req.query.id || '').toString().trim().toUpperCase();
 
   async function fetchAll() {
     let out = [], next = `${apiUrl}/api/database/rows/table/${tableId}/?user_field_names=true`;
@@ -25,7 +26,7 @@ export default async function handler(req, res) {
     const rows = await fetchAll();
     const head = rows[0] ? Object.keys(rows[0]) : [];
     const found = qId
-      ? rows.find(r => (''+(r.id_plaque||'')).trim()===qId || (''+(r.id_plaque||'')).trim()===qId.padStart(4,'0'))
+      ? rows.find(r => String(r.code_plaque||'').toUpperCase().trim() === qId)
       : null;
 
     res.status(200).json({
@@ -34,9 +35,9 @@ export default async function handler(req, res) {
       head,
       sample: rows.slice(0,3),
       query: qId || null,
-      found: found ? { id: found.id, id_plaque: found.id_plaque, actif: found.actif, url_google: found.url_google } : null
+      found: found ? { id: found.id, code_plaque: found.code_plaque, actif: found.actif, url_google: found.url_google } : null
     });
   } catch (e) {
     res.status(500).json({ error: e.message || String(e) });
   }
-}
+};
