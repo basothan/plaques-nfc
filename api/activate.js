@@ -1,4 +1,4 @@
-// /api/activate.js  (CommonJS)
+// /api/activate.js  (CommonJS, aligne sur "code_plaque")
 
 function parseBody(req) {
   try {
@@ -10,7 +10,7 @@ function parseBody(req) {
   }
 }
 
-// Accepte 4 à 10 alphanumériques (maj/min indifférentes)
+// Autorise 4 à 10 alphanumériques (maj/min indifférentes)
 function isValidCode(code) {
   return /^[A-Z0-9]{4,10}$/.test(String(code || '').toUpperCase());
 }
@@ -51,6 +51,7 @@ async function patchRow(apiUrl, tableId, rowId, token, payload) {
 }
 
 module.exports = async (req, res) => {
+  // CORS permissif
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
@@ -68,17 +69,19 @@ module.exports = async (req, res) => {
     }
 
     const body = parseBody(req);
-    let { id_plaque, url_google } = body;
+    // ✅ on attend "code_plaque" désormais (et garde compatibilité si jamais "id_plaque" arrive)
+    let code_plaque = body.code_plaque || body.id_plaque;
+    let { url_google } = body;
 
-    if (!id_plaque || !url_google) {
+    if (!code_plaque || !url_google) {
       console.error('BODY_INVALID', { body });
-      return res.status(400).json({ ok: false, error: 'Champs manquants: id_plaque et url_google sont requis' });
+      return res.status(400).json({ ok: false, error: 'Champs manquants: code_plaque et url_google sont requis' });
     }
 
-    id_plaque = String(id_plaque).toUpperCase().trim();
+    code_plaque = String(code_plaque).toUpperCase().trim();
     url_google = String(url_google).trim();
 
-    if (!isValidCode(id_plaque)) {
+    if (!isValidCode(code_plaque)) {
       return res.status(400).json({ ok: false, error: 'Format du numéro invalide (4–10 caractères alphanumériques)' });
     }
     if (!isValidUrl(url_google)) {
@@ -87,8 +90,8 @@ module.exports = async (req, res) => {
 
     const rows = await listRows(BASEROW_API_URL, BASEROW_TABLE_ID, BASEROW_TOKEN);
 
-    // ✅ Recherche par le bon NOM DE COLONNE: id_plaque
-    const row = rows.find(r => String(r.id_plaque || '').toUpperCase().trim() === id_plaque);
+    // ✅ Recherche par NOM DE COLONNE Baserow: "code_plaque"
+    const row = rows.find(r => String(r.code_plaque || '').toUpperCase().trim() === code_plaque);
     if (!row) {
       return res.status(404).json({ ok: false, error: 'Numéro de plaque introuvable' });
     }
@@ -96,7 +99,7 @@ module.exports = async (req, res) => {
     // Déjà activée ?
     const actifVal = String(row.actif || '').toLowerCase();
     if (actifVal === 'oui' || row.actif === true) {
-      // ✅ Utiliser 409 pour coller au front
+      // ✅ Statut cohérent avec le front
       return res.status(409).json({ ok: false, error: 'Plaque déjà activée' });
     }
 
@@ -107,7 +110,7 @@ module.exports = async (req, res) => {
       date_activation: today
     });
 
-    console.log('ACTIVATE_OK', { id_plaque, rowId: row.id });
+    console.log('ACTIVATE_OK', { code_plaque, rowId: row.id });
     return res.status(200).json({ ok: true, id: updated?.id, message: 'Activation réussie' });
 
   } catch (e) {
