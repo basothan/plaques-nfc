@@ -1,80 +1,115 @@
-// activate.js
+// /api/activate.js  (CommonJS, robuste: parse body string/JSON, logs explicites)
 
-const form = document.getElementById('activationForm');
-const submitBtn = document.getElementById('submitBtn');
-const msg = document.getElementById('message');
-const gif = document.getElementById('successGif');
-
-function showMessage(text, type = 'info') {
-  msg.textContent = text;
-  msg.className = 'text-sm';
-  // neutral
-  let cls = 'text-gray-700';
-  if (type === 'success') cls = 'text-green-600 font-medium';
-  if (type === 'error') cls = 'text-red-600 font-medium';
-  msg.classList.add(cls);
+function parseBody(req) {
+  try {
+    if (req.body && typeof req.body === 'object') return req.body;
+    if (typeof req.body === 'string' && req.body.trim()) return JSON.parse(req.body);
+    return {};
+  } catch {
+    return {};
+  }
 }
 
-function showGif() {
-  if (!gif) return;
-  gif.classList.remove('hidden');
-  // On masque le gif après 4 secondes
-  setTimeout(() => gif.classList.add('hidden'), 4000);
+function isValidCode(code) {
+  return /^[A-Z0-9]{5}$/.test(String(code || '').toUpperCase());
 }
 
-form.addEventListener('submit', async (e) => {
-  e.preventDefault();
+function isValidUrl(url) {
+  try {
+    const u = new URL(url);
+    return ['http:', 'https:'].includes(u.protocol);
+  } catch { return false; }
+}
 
-  const codePlaque = document.getElementById('codePlaque').value.trim();
-  const urlGoogle = document.getElementById('urlGoogle').value.trim();
+async function listRows(apiUrl, tableId, token) {
+  const url = `${apiUrl}/api/database/rows/table/${tableId}/?size=200&user_field_names=true`;
+  const r = await fetch(url, { headers: { Authorization: `Token ${token}` } });
+  if (!r.ok) {
+    const txt = await r.text().catch(() => null);
+    throw new Error(`Erreur Baserow LIST (${r.status}) ${txt || ''}`);
+  }
+  const data = await r.json();
+  return data?.results || [];
+}
 
-  // Reset UI
-  showMessage('');
-  gif && gif.classList.add('hidden');
-  submitBtn.disabled = true;
-  submitBtn.style.opacity = '0.7';
+async function patchRow(apiUrl, tableId, rowId, token, payload) {
+  const url = `${apiUrl}/api/database/rows/table/${tableId}/${rowId}/?user_field_names=true`;
+  const r = await fetch(url, {
+    method: 'PATCH',
+    headers: {
+      Authorization: `Token ${token}`,
+      'Content-Type': 'application/json'
+    },
+    body: JSON.stringify(payload)
+  });
+  if (!r.ok) {
+    const txt = await r.text().catch(() => null);
+    throw new Error(`Erreur Baserow PATCH (${r.status}) ${txt || ''}`);
+  }
+  return r.json();
+}
+
+module.exports = async (req, res) => {
+  // CORS permissif (depuis même domaine c’est OK, mais ça ne gêne pas)
+  res.setHeader('Access-Control-Allow-Origin', '*');
+  res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
+  if (req.method === 'OPTIONS') return res.status(204).end();
 
   try {
-    const res = await fetch('/api/activate', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        id_plaque: codePlaque,  // côté API on attend id_plaque
-        url_google: urlGoogle
-      })
+    if (req.method !== 'POST') {
+      return res.status(405).json({ ok: false, error: 'Méthode non autorisée' });
+    }
+
+    const { BASEROW_API_URL, BASEROW_TABLE_ID, BASEROW_TOKEN } = process.env;
+    if (!BASEROW_API_URL || !BASEROW_TABLE_ID || !BASEROW_TOKEN) {
+      console.error('ENV_MISSING', { hasUrl: !!BASEROW_API_URL, hasTable: !!BASEROW_TABLE_ID, hasToken: !!BASEROW_TOKEN });
+      return res.status(500).json({ ok: false, error: 'Configuration serveur incomplète' });
+    }
+
+    const body = parseBody(req);
+    let { id_plaque, url_google } = body;
+
+    if (!id_plaque || !url_google) {
+      console.error('BODY_INVALID', { body });
+      return res.status(400).json({ ok: false, error: 'Champs manquants: id_plaque et url_google sont requis' });
+    }
+
+    id_plaque = String(id_plaque).toUpperCase().trim();
+    url_google = String(url_google).trim();
+
+    if (!isValidCode(id_plaque)) {
+      return res.status(400).json({ ok: false, error: 'Format du numéro invalide (5 caractères alphanumériques)' });
+    }
+    if (!isValidUrl(url_google)) {
+      return res.status(400).json({ ok: false, error: 'URL invalide' });
+    }
+
+    const rows = await listRows(BASEROW_API_URL, BASEROW_TABLE_ID, BASEROW_TOKEN);
+
+    // ⚠️ Recherche par NOM DE COLONNE côté Baserow : "code_plaque"
+    const row = rows.find(r => String(r.code_plaque || '').toUpperCase().trim() === id_plaque);
+    if (!row) {
+      return res.status(404).json({ ok: false, error: 'Numéro de plaque introuvable' });
+    }
+
+    // Déjà activée ?
+    if (String(row.actif || '').toLowerCase() === 'oui' || row.actif === true) {
+      return res.status(400).json({ ok: false, error: 'Plaque déjà activée' });
+    }
+
+    const today = new Date().toISOString().slice(0, 10);
+    const updated = await patchRow(BASEROW_API_URL, BASEROW_TABLE_ID, row.id, BASEROW_TOKEN, {
+      url_google,
+      actif: 'oui',
+      date_activation: today
     });
 
-    const data = await res.json().catch(() => ({}));
+    console.log('ACTIVATE_OK', { id_plaque, rowId: row.id });
+    return res.status(200).json({ ok: true, id: updated?.id, message: 'Activation réussie' });
 
-    if (!res.ok) {
-      // Messages d'erreurs “propres”
-      if (res.status === 404) {
-        showMessage('Plaque introuvable. Vérifie ton numéro.', 'error');
-      } else if (res.status === 409) {
-        showMessage('Cette plaque est déjà activée.', 'error');
-      } else if (res.status === 400) {
-        showMessage(data?.error || 'Champs manquants ou invalides.', 'error');
-      } else {
-        showMessage('Erreur interne. Réessaie dans un instant.', 'error');
-      }
-      return;
-    }
-
-    // Succès logique renvoyé par l’API
-    if (data?.ok) {
-      showMessage('Plaque activée avec succès !', 'success');
-      showGif();
-
-      // On vide les champs après succès
-      form.reset();
-    } else {
-      // Cas où le backend répond 200 sans ok:true (peu probable)
-      showMessage(data?.error || 'Activation non confirmée. Réessaie.', 'error');
-    }
-  } catch (err) {
-    showMessage('Erreur réseau. Vérifie ta connexion et réessaie.', 'error');
-  } finally {
-    submitBtn.disabled = false;
-    submitBtn.style.opacity = '1';
+  } catch (e) {
+    console.error('ACTIVATE_ERROR', e);
+    return res.status(500).json({ ok: false, error: e?.message || 'Erreur interne' });
   }
-});
+};
