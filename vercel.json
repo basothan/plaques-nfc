@@ -3,11 +3,13 @@
   "public": true,
   "builds": [
     { "src": "index.html", "use": "@vercel/static" },
-    { "src": "api/**/*.js", "use": "@vercel/node" }
+    { "src": "api/**/*.js", "use": "@vercel/node" },
+    { "src": "*.png", "use": "@vercel/static" },
+    { "src": "*.gif", "use": "@vercel/static" }
   ],
   "routes": [
-    { "src": "^/qr$", "dest": "/api/qr" },
     { "src": "^/api/(.*)$", "dest": "/api/$1" },
+    { "src": "^/qr$", "dest": "/api/qr" },
     { "src": "^/(.*)$", "dest": "/index.html" }
   ]
 }
