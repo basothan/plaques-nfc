@@ -1,4 +1,4 @@
-// /api/activate.js  (CommonJS, robuste: parse body string/JSON, logs explicites)
+// /api/activate.js  (CommonJS)
 
 function parseBody(req) {
   try {
@@ -10,8 +10,9 @@ function parseBody(req) {
   }
 }
 
+// Accepte 4 à 10 alphanumériques (maj/min indifférentes)
 function isValidCode(code) {
-  return /^[A-Z0-9]{5}$/.test(String(code || '').toUpperCase());
+  return /^[A-Z0-9]{4,10}$/.test(String(code || '').toUpperCase());
 }
 
 function isValidUrl(url) {
@@ -50,7 +51,6 @@ async function patchRow(apiUrl, tableId, rowId, token, payload) {
 }
 
 module.exports = async (req, res) => {
-  // CORS permissif (depuis même domaine c’est OK, mais ça ne gêne pas)
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
@@ -79,7 +79,7 @@ module.exports = async (req, res) => {
     url_google = String(url_google).trim();
 
     if (!isValidCode(id_plaque)) {
-      return res.status(400).json({ ok: false, error: 'Format du numéro invalide (5 caractères alphanumériques)' });
+      return res.status(400).json({ ok: false, error: 'Format du numéro invalide (4–10 caractères alphanumériques)' });
     }
     if (!isValidUrl(url_google)) {
       return res.status(400).json({ ok: false, error: 'URL invalide' });
@@ -87,15 +87,17 @@ module.exports = async (req, res) => {
 
     const rows = await listRows(BASEROW_API_URL, BASEROW_TABLE_ID, BASEROW_TOKEN);
 
-    // ⚠️ Recherche par NOM DE COLONNE côté Baserow : "code_plaque"
-    const row = rows.find(r => String(r.code_plaque || '').toUpperCase().trim() === id_plaque);
+    // ✅ Recherche par le bon NOM DE COLONNE: id_plaque
+    const row = rows.find(r => String(r.id_plaque || '').toUpperCase().trim() === id_plaque);
     if (!row) {
       return res.status(404).json({ ok: false, error: 'Numéro de plaque introuvable' });
     }
 
     // Déjà activée ?
-    if (String(row.actif || '').toLowerCase() === 'oui' || row.actif === true) {
-      return res.status(400).json({ ok: false, error: 'Plaque déjà activée' });
+    const actifVal = String(row.actif || '').toLowerCase();
+    if (actifVal === 'oui' || row.actif === true) {
+      // ✅ Utiliser 409 pour coller au front
+      return res.status(409).json({ ok: false, error: 'Plaque déjà activée' });
     }
 
     const today = new Date().toISOString().slice(0, 10);
