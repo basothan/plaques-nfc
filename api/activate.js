@@ -1,116 +1,80 @@
-// /api/activate.js  (CommonJS)
+// activate.js
 
-const API_URL = process.env.BASEROW_API_URL || 'https://api.baserow.io';
-const TABLE_ID = process.env.BASEROW_TABLE_ID;
-const TOKEN   = process.env.BASEROW_TOKEN;
+const form = document.getElementById('activationForm');
+const submitBtn = document.getElementById('submitBtn');
+const msg = document.getElementById('message');
+const gif = document.getElementById('successGif');
 
-// Petite aide pour répondre proprement
-function send(res, status, data) {
-  res.statusCode = status;
-  res.setHeader('Content-Type', 'application/json; charset=utf-8');
-  res.end(JSON.stringify(data));
+function showMessage(text, type = 'info') {
+  msg.textContent = text;
+  msg.className = 'text-sm';
+  // neutral
+  let cls = 'text-gray-700';
+  if (type === 'success') cls = 'text-green-600 font-medium';
+  if (type === 'error') cls = 'text-red-600 font-medium';
+  msg.classList.add(cls);
 }
 
-// Récupère toutes les lignes de la table (pagination simple)
-async function fetchAllRows() {
-  let results = [];
-  let url = `${API_URL}/api/database/rows/table/${TABLE_ID}/?user_field_names=true`;
-  // Si besoin de pagination, on enchaîne les "next"
-  while (url) {
-    const r = await fetch(url, {
-      headers: { Authorization: `Token ${TOKEN}` }
-    });
-    if (!r.ok) {
-      const txt = await r.text();
-      throw new Error(`Erreur API Baserow (GET ${r.status}): ${txt}`);
-    }
-    const data = await r.json();
-    results = results.concat(data.results || []);
-    url = data.next || null;
-  }
-  return results;
+function showGif() {
+  if (!gif) return;
+  gif.classList.remove('hidden');
+  // On masque le gif après 4 secondes
+  setTimeout(() => gif.classList.add('hidden'), 4000);
 }
 
-module.exports = async function (req, res) {
+form.addEventListener('submit', async (e) => {
+  e.preventDefault();
+
+  const codePlaque = document.getElementById('codePlaque').value.trim();
+  const urlGoogle = document.getElementById('urlGoogle').value.trim();
+
+  // Reset UI
+  showMessage('');
+  gif && gif.classList.add('hidden');
+  submitBtn.disabled = true;
+  submitBtn.style.opacity = '0.7';
+
   try {
-    if (req.method !== 'POST') {
-      return send(res, 405, { error: 'Méthode non autorisée' });
-    }
-
-    // Vérif ENV côté runtime
-    if (!TABLE_ID || !TOKEN || !API_URL) {
-      return send(res, 500, {
-        error: 'Configuration manquante (BASEROW_TABLE_ID / BASEROW_TOKEN / BASEROW_API_URL)'
-      });
-    }
-
-    // Lecture du body
-    let body = '';
-    await new Promise((resolve) => {
-      req.on('data', (chunk) => (body += chunk));
-      req.on('end', resolve);
-    });
-
-    let payload = {};
-    try {
-      payload = JSON.parse(body || '{}');
-    } catch {
-      return send(res, 400, { error: 'Corps JSON invalide' });
-    }
-
-    const id_plaque = (payload.id_plaque ?? '').toString().trim();
-    const url_google = (payload.url_google ?? '').toString().trim();
-
-    if (!id_plaque || !url_google) {
-      return send(res, 400, { error: 'Champs manquants : id_plaque et url_google sont requis.' });
-    }
-
-    // Récupère la ligne correspondant à l’id_plaque
-    const rows = await fetchAllRows();
-    const row = rows.find(
-      (r) => (r['id_plaque'] ?? '').toString().trim() === id_plaque
-    );
-
-    if (!row) {
-      return send(res, 404, { error: 'Numéro de plaque introuvable.' });
-    }
-
-    // Si déjà actif = "oui", on bloque
-    const actif = (row['actif'] ?? '').toString().toLowerCase();
-    if (actif === 'oui') {
-      return send(res, 400, { error: 'Plaque déjà activée.' });
-    }
-
-    // Patch de la ligne (user_field_names=true pour utiliser les noms de colonnes)
-    const patchUrl = `${API_URL}/api/database/rows/table/${TABLE_ID}/${row.id}/?user_field_names=true`;
-    const today = new Date().toISOString().slice(0, 10); // YYYY-MM-DD
-
-    const r2 = await fetch(patchUrl, {
-      method: 'PATCH',
-      headers: {
-        Authorization: `Token ${TOKEN}`,
-        'Content-Type': 'application/json'
-      },
+    const res = await fetch('/api/activate', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
-        url_google,
-        actif: 'oui',
-        date_activation: today
+        id_plaque: codePlaque,  // côté API on attend id_plaque
+        url_google: urlGoogle
       })
     });
 
-    if (!r2.ok) {
-      const txt = await r2.text();
-      return send(res, 502, { error: `Erreur API Baserow (PATCH ${r2.status})`, details: txt });
+    const data = await res.json().catch(() => ({}));
+
+    if (!res.ok) {
+      // Messages d'erreurs “propres”
+      if (res.status === 404) {
+        showMessage('Plaque introuvable. Vérifie ton numéro.', 'error');
+      } else if (res.status === 409) {
+        showMessage('Cette plaque est déjà activée.', 'error');
+      } else if (res.status === 400) {
+        showMessage(data?.error || 'Champs manquants ou invalides.', 'error');
+      } else {
+        showMessage('Erreur interne. Réessaie dans un instant.', 'error');
+      }
+      return;
     }
 
-    const updated = await r2.json();
+    // Succès logique renvoyé par l’API
+    if (data?.ok) {
+      showMessage('Plaque activée avec succès !', 'success');
+      showGif();
 
-    return send(res, 200, {
-      ok: true,
-      id: updated.id,
-      message: 'Plaque activée avec succès.'
-    });
-  } catch (e) {
-    return send(res, 500, { error: 'Erreur interne', details: e.message });
+      // On vide les champs après succès
+      form.reset();
+    } else {
+      // Cas où le backend répond 200 sans ok:true (peu probable)
+      showMessage(data?.error || 'Activation non confirmée. Réessaie.', 'error');
+    }
+  } catch (err) {
+    showMessage('Erreur réseau. Vérifie ta connexion et réessaie.', 'error');
+  } finally {
+    submitBtn.disabled = false;
+    submitBtn.style.opacity = '1';
   }
-};
+});
