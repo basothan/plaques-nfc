@@ -1,4 +1,4 @@
-// api/qr.js  (CommonJS – Vercel Node runtime)
+// /api/qr.js  (CommonJS – Vercel Node runtime, aligne sur "code_plaque")
 
 module.exports = async (req, res) => {
   try {
@@ -40,7 +40,8 @@ module.exports = async (req, res) => {
     const rows = Array.isArray(data?.results) ? data.results : [];
 
     const norm = s => String(s || '').trim().toUpperCase();
-    const row = rows.find(x => norm(x.id_plaque) === norm(code));
+    // ✅ Recherche dans "code_plaque"
+    const row = rows.find(x => norm(x.code_plaque) === norm(code));
 
     if (!row) {
       if (debug) return res.status(404).json({ ok: false, error: 'Plaque non trouvée', query: code });
@@ -91,9 +92,4 @@ module.exports = async (req, res) => {
 
 function escapeHtml(s) {
   return String(s)
-    .replaceAll('&', '&amp;')
-    .replaceAll('<', '&lt;')
-    .replaceAll('>', '&gt;')
-    .replaceAll('"', '&quot;')
-    .replaceAll("'", '&#39;');
-}
+    .replaceAll('&', '&amp;
