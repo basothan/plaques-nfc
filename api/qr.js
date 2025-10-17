@@ -13,7 +13,6 @@ module.exports = async (req, res) => {
       return res.status(400).json({ ok: false, error: 'Paramètre id manquant' });
     }
 
-    // ENV (déjà utilisés ailleurs dans ton projet)
     const apiUrl  = process.env.BASEROW_API_URL || 'https://api.baserow.io';
     const tableId = process.env.BASEROW_TABLE_ID;
     const token   = process.env.BASEROW_TOKEN;
@@ -25,12 +24,8 @@ module.exports = async (req, res) => {
       });
     }
 
-    // --- Récupération des lignes de la table ---
-    // (pour rester simple/robuste, on lit jusqu’à 200 lignes et on filtre côté serveur)
     const url = `${apiUrl}/api/database/rows/table/${tableId}/?user_field_names=true&size=200`;
-    const r = await fetch(url, {
-      headers: { Authorization: `Token ${token}` }
-    });
+    const r = await fetch(url, { headers: { Authorization: `Token ${token}` } });
 
     if (!r.ok) {
       const txt = await r.text().catch(() => '');
@@ -44,31 +39,18 @@ module.exports = async (req, res) => {
     const data = await r.json();
     const rows = Array.isArray(data?.results) ? data.results : [];
 
-    // Recherche de la ligne correspondant au code (insensible à la casse/espaces)
     const norm = s => String(s || '').trim().toUpperCase();
-    const row = rows.find(
-      x => norm(x.id_plaque) === norm(code)
-    );
+    const row = rows.find(x => norm(x.id_plaque) === norm(code));
 
     if (!row) {
-      if (debug) {
-        return res.status(404).json({ ok: false, error: 'Plaque non trouvée', query: code });
-      }
-      // Petite page 404 user-friendly
+      if (debug) return res.status(404).json({ ok: false, error: 'Plaque non trouvée', query: code });
       res.statusCode = 404;
       res.setHeader('Content-Type', 'text/html; charset=utf-8');
-      return res.end(`
-        <!doctype html>
-        <meta charset="utf-8">
-        <title>Plaque non trouvée</title>
+      return res.end(`<!doctype html><meta charset="utf-8"><title>Plaque non trouvée</title>
         <style>body{font-family:ui-sans-serif,system-ui;max-width:720px;margin:8vh auto;padding:24px;color:#0f172a}</style>
-        <h1>Plaque introuvable</h1>
-        <p>Le code <strong>${escapeHtml(code)}</strong> n'existe pas dans la base.</p>
-        <p>Vérifiez le numéro et réessayez.</p>
-      `);
+        <h1>Plaque introuvable</h1><p>Le code <strong>${escapeHtml(code)}</strong> n'existe pas.</p>`);
     }
 
-    // Vérification du statut "actif"
     const isActive = (() => {
       const v = row.actif;
       if (typeof v === 'boolean') return v;
@@ -77,51 +59,26 @@ module.exports = async (req, res) => {
     })();
 
     if (!isActive) {
-      if (debug) {
-        return res.status(409).json({ ok: false, error: 'Plaque non activée', row });
-      }
+      if (debug) return res.status(409).json({ ok: false, error: 'Plaque non activée', row });
       res.statusCode = 409;
       res.setHeader('Content-Type', 'text/html; charset=utf-8');
-      return res.end(`
-        <!doctype html>
-        <meta charset="utf-8">
-        <title>Plaque non activée</title>
+      return res.end(`<!doctype html><meta charset="utf-8"><title>Plaque non activée</title>
         <style>body{font-family:ui-sans-serif,system-ui;max-width:720px;margin:8vh auto;padding:24px;color:#0f172a}</style>
-        <h1>Plaque non activée</h1>
-        <p>Cette plaque n'est pas encore activée. Merci de contacter le support.</p>
-      `);
+        <h1>Plaque non activée</h1><p>Cette plaque n'est pas encore activée.</p>`);
     }
 
-    // URL de redirection
     const target = String(row.url_google || '').trim();
-
     if (!/^https?:\/\//i.test(target)) {
-      if (debug) {
-        return res.status(400).json({ ok: false, error: 'URL Google invalide', row });
-      }
+      if (debug) return res.status(400).json({ ok: false, error: 'URL Google invalide', row });
       res.statusCode = 400;
       res.setHeader('Content-Type', 'text/html; charset=utf-8');
-      return res.end(`
-        <!doctype html>
-        <meta charset="utf-8">
-        <title>URL invalide</title>
+      return res.end(`<!doctype html><meta charset="utf-8"><title>URL invalide</title>
         <style>body{font-family:ui-sans-serif,system-ui;max-width:720px;margin:8vh auto;padding:24px;color:#0f172a}</style>
-        <h1>URL de destination invalide</h1>
-        <p>Aucune URL valide n'est renseignée pour cette plaque.</p>
-      `);
+        <h1>URL de destination invalide</h1><p>Aucune URL valide n'est renseignée.</p>`);
     }
 
-    // Mode debug : renvoie JSON sans rediriger
-    if (debug) {
-      return res.status(200).json({
-        ok: true,
-        id: code,
-        redirect: target,
-        row
-      });
-    }
+    if (debug) return res.status(200).json({ ok: true, id: code, redirect: target, row });
 
-    // Redirection 302 vers la page Google associée
     res.statusCode = 302;
     res.setHeader('Location', target);
     return res.end();
@@ -132,7 +89,6 @@ module.exports = async (req, res) => {
   }
 };
 
-// Petite utilité pour éviter l’injection dans les pages HTML de fallback
 function escapeHtml(s) {
   return String(s)
     .replaceAll('&', '&amp;')
