@@ -9,26 +9,30 @@
 
 <body class="bg-gray-50 flex items-center justify-center min-h-screen">
   <div class="bg-white p-8 rounded-2xl shadow-md w-full max-w-md text-center">
-
-    <!-- LOGO + TITRE EN DESSOUS -->
     <div class="flex flex-col items-center mb-6">
       <img src="logo.png" alt="Basothan MyConnect Logo" class="h-12 mb-3">
       <h1 class="text-2xl font-bold text-gray-900 uppercase">Activer ma plaque</h1>
     </div>
 
     <p class="text-gray-600 mb-6 text-left">
-      Entrez votre <strong>numéro de plaque</strong> et votre <strong>lien Google</strong> pour relier votre plaque à votre page.
+      Entrez votre <strong>numéro de plaque</strong> et votre <strong>lien Google</strong>.
     </p>
 
     <div class="bg-gray-100 p-3 rounded-md mb-4 text-sm text-gray-700 font-mono text-left">
       Exemple d’URL Google : https://g.page/nom-de-votre-commerce
     </div>
 
-    <!-- FORMULAIRE -->
     <form id="activationForm" class="space-y-4 text-left">
       <div>
         <label for="codePlaque" class="block text-gray-800 font-medium mb-1">Numéro de plaque</label>
-        <input type="text" id="codePlaque" name="codePlaque" class="w-full border border-gray-300 rounded-lg px-3 py-2" required />
+        <input
+          type="text"
+          id="codePlaque"
+          name="codePlaque"
+          class="w-full border border-gray-300 rounded-lg px-3 py-2"
+          maxlength="10"
+          oninput="this.value=this.value.toUpperCase()"
+          required />
       </div>
 
       <div>
@@ -36,7 +40,6 @@
         <input type="url" id="urlGoogle" name="urlGoogle" class="w-full border border-gray-300 rounded-lg px-3 py-2" required />
       </div>
 
-      <!-- BOUTON VALIDATION -->
       <button 
         type="submit" 
         id="submitBtn" 
@@ -45,9 +48,9 @@
         Valider l’activation
       </button>
 
-      <!-- ZONE DE MESSAGE + GIF -->
       <div id="feedback" class="mt-4 text-center">
         <p id="message" class="text-sm"></p>
+        <pre id="diag" class="text-xs text-gray-500 whitespace-pre-wrap mt-2"></pre>
         <img id="successGif" src="/activation_ok.gif" alt="Activation réussie" class="mx-auto mt-3 hidden h-28">
       </div>
     </form>
@@ -57,15 +60,14 @@
     </p>
   </div>
 
-  <!-- SCRIPT -->
   <script>
-    const form = document.getElementById('activationForm');
-    const submitBtn = document.getElementById('submitBtn');
-    const msg = document.getElementById('message');
-    const gif = document.getElementById('successGif');
+    const API_BASE = 'https://plaques-nfc.vercel.app'; // 🔧 temporaire
 
-    // 🔧 API temporaire : on utilise la version Vercel directe
-    const API_BASE = 'https://plaques-nfc.vercel.app'; 
+    const form = document.getElementById('activationForm');
+    const msg = document.getElementById('message');
+    const diag = document.getElementById('diag');
+    const gif = document.getElementById('successGif');
+    const submitBtn = document.getElementById('submitBtn');
 
     function showMessage(text, type = 'info') {
       msg.textContent = text;
@@ -83,11 +85,10 @@
 
     form.addEventListener('submit', async (e) => {
       e.preventDefault();
-
       const codePlaque = document.getElementById('codePlaque').value.trim();
       const urlGoogle = document.getElementById('urlGoogle').value.trim();
-
-      showMessage('');
+      showMessage('Activation en cours...');
+      diag.textContent = '';
       gif.classList.add('hidden');
       submitBtn.disabled = true;
       submitBtn.style.opacity = '0.7';
@@ -96,36 +97,24 @@
         const res = await fetch(`${API_BASE}/api/activate`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            id_plaque: codePlaque,
-            url_google: urlGoogle
-          })
+          body: JSON.stringify({ code_plaque: codePlaque, url_google: urlGoogle })
         });
 
         const data = await res.json().catch(() => ({}));
+        diag.textContent = `status: ${res.status}\nresponse: ${JSON.stringify(data)}`;
 
-        if (!res.ok) {
-          if (res.status === 404) {
-            showMessage('Plaque introuvable. Vérifie ton numéro.', 'error');
-          } else if (res.status === 409) {
-            showMessage('Cette plaque est déjà activée.', 'error');
-          } else if (res.status === 400) {
-            showMessage(data?.error || 'Champs manquants ou invalides.', 'error');
-          } else {
-            showMessage('Erreur interne. Réessaie dans un instant.', 'error');
-          }
-          return;
-        }
-
-        if (data?.ok) {
-          showMessage('Plaque activée avec succès !', 'success');
+        if (data.ok) {
+          showMessage('✅ Plaque activée avec succès !', 'success');
           showGif();
           form.reset();
+        } else if (data.error) {
+          showMessage(data.error, 'error');
         } else {
-          showMessage(data?.error || 'Activation non confirmée. Réessaie.', 'error');
+          showMessage('Erreur inconnue. Réessaie.', 'error');
         }
       } catch (err) {
         showMessage('Erreur réseau. Vérifie ta connexion et réessaie.', 'error');
+        diag.textContent = err.message;
       } finally {
         submitBtn.disabled = false;
         submitBtn.style.opacity = '1';
