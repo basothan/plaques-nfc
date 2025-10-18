@@ -28,15 +28,7 @@
     <form id="activationForm" class="space-y-4 text-left">
       <div>
         <label for="codePlaque" class="block text-gray-800 font-medium mb-1">Numéro de plaque</label>
-        <input
-          type="text"
-          id="codePlaque"
-          name="codePlaque"
-          class="w-full border border-gray-300 rounded-lg px-3 py-2"
-          maxlength="10"
-          pattern="[A-Za-z0-9]{4,10}"
-          oninput="this.value=this.value.toUpperCase()"
-          required />
+        <input type="text" id="codePlaque" name="codePlaque" class="w-full border border-gray-300 rounded-lg px-3 py-2" required />
       </div>
 
       <div>
@@ -72,6 +64,9 @@
     const msg = document.getElementById('message');
     const gif = document.getElementById('successGif');
 
+    // 🔧 API temporaire : on utilise la version Vercel directe
+    const API_BASE = 'https://plaques-nfc.vercel.app'; 
+
     function showMessage(text, type = 'info') {
       msg.textContent = text;
       msg.className = 'text-sm';
@@ -98,12 +93,11 @@
       submitBtn.style.opacity = '0.7';
 
       try {
-        const res = await fetch('/api/activate', {
+        const res = await fetch(`${API_BASE}/api/activate`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
-            // ✅ clé alignée avec la colonne Baserow
-            code_plaque: codePlaque,
+            id_plaque: codePlaque,
             url_google: urlGoogle
           })
         });
