@@ -1,77 +1,45 @@
-// /app.js
-const form = document.getElementById("activationform");
-const codeInput = document.getElementById("code");
-const urlInput = document.getElementById("url_google");
-const statusEl = document.getElementById("status");
-const submitBtn = document.getElementById("submitBtn");
-const okGif = document.getElementById("okGif");
+(function () {
+  const form = document.getElementById("activationform");
+  const codeInput = document.getElementById("code");
+  const urlInput = document.getElementById("url_google");
+  const statusEl = document.getElementById("status");
+  const okEl = document.getElementById("ok");
 
-function setStatus(msg, ok = false) {
-  statusEl.textContent = msg;
-  statusEl.className =
-    "text-sm " + (ok ? "text-green-600" : "text-red-600");
-  if (ok) okGif.classList.remove("hidden");
-}
-
-function isLikelyGoogleUrl(u) {
-  try {
-    const url = new URL(u);
-    // accepte g.page, maps.app.goo.gl, maps.google.*, link g.page
-    return (
-      /(^|\.)g\.page$/.test(url.hostname) ||
-      /(^|\.)maps\.app\.goo\.gl$/.test(url.hostname) ||
-      /(^|\.)google\./.test(url.hostname)
-    );
-  } catch (_) {
-    return false;
+  function normalizeUrl(u) {
+    const s = (u || "").trim();
+    if (!s) return s;
+    return /^https?:\/\//i.test(s) ? s : "https://" + s;
   }
-}
 
-if (form) {
+  if (!form) return;
+
   form.addEventListener("submit", async (e) => {
     e.preventDefault();
-    okGif.classList.add("hidden");
-    setStatus("");
-
-    const id_plaque = codeInput.value.trim();
-    const url_google = urlInput.value.trim();
-
-    if (!id_plaque || !url_google) {
-      return setStatus("Veuillez remplir les deux champs.");
-    }
-    if (!isLikelyGoogleUrl(url_google)) {
-      return setStatus("Veuillez entrer un lien Google valide (g.page, maps, etc.).");
-    }
-
-    submitBtn.disabled = true;
-    statusEl.className = "text-sm text-gray-600";
     statusEl.textContent = "Activation en cours...";
+    okEl.classList.add("hidden");
 
     try {
+      const code_plaque = (codeInput.value || "").trim();
+      const url_google = normalizeUrl(urlInput.value);
+      if (!code_plaque || !url_google) throw new Error("Champs manquants");
+
       const res = await fetch("/api/activate", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ id_plaque, url_google }),
+        body: JSON.stringify({ code_plaque, url_google })
       });
 
       const data = await res.json().catch(() => ({}));
-
       if (!res.ok) {
-        const msg =
-          typeof data?.error === "string"
-            ? data.error
-            : JSON.stringify(data?.error || data || {});
-        throw new Error(msg || "Erreur serveur");
+        const msg = data?.error?.detail || data?.error?.message || data?.error || `Erreur ${res.status}`;
+        throw new Error(msg);
       }
 
-      setStatus("Activation réussie ✅", true);
-      codeInput.value = "";
-      urlInput.value = "";
+      statusEl.textContent = "✅ Activation réussie";
+      okEl.classList.remove("hidden");
     } catch (err) {
       console.error(err);
-      setStatus(`Échec de l’activation : ${err.message || err}`);
-    } finally {
-      submitBtn.disabled = false;
+      statusEl.textContent = `❌ ${err.message || "Erreur inconnue"}`;
     }
   });
-}
+})();
