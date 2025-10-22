@@ -1,125 +1,102 @@
 <!DOCTYPE html>
 <html lang="fr">
-<head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Activer ma plaque — Basothan MyConnect</title>
-  <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
-</head>
+  <head>
+    <meta charset="UTF-8" />
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1, maximum-scale=1"
+    />
+    <title>Activer ma plaque</title>
+    <link
+      rel="icon"
+      href="/logo.png"
+      type="image/png"
+    />
+    <!-- Tailwind CDN -->
+    <link
+      rel="stylesheet"
+      href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css"
+    />
+    <meta name="robots" content="noindex" />
+  </head>
+  <body class="bg-gray-50 flex items-center justify-center min-h-screen">
+    <div class="bg-white p-8 rounded-2xl shadow-md w-full max-w-md text-center">
+      <div class="flex flex-col items-center mb-6">
+        <img
+          src="/logo.png"
+          alt="logo"
+          class="w-10 h-10 mb-3 opacity-80"
+          onerror="this.style.display='none'"
+        />
+        <h1 class="text-2xl font-bold">ACTIVER MA PLAQUE</h1>
+      </div>
 
-<body class="bg-gray-50 flex items-center justify-center min-h-screen">
-  <div class="bg-white p-8 rounded-2xl shadow-md w-full max-w-md text-center">
-    <div class="flex flex-col items-center mb-6">
-      <img src="logo.png" alt="Basothan MyConnect Logo" class="h-12 mb-3">
-      <h1 class="text-2xl font-bold text-gray-900 uppercase">Activer ma plaque</h1>
+      <p class="text-gray-600 mb-6 text-left">
+        Entrez votre <strong>numéro de plaque</strong> et votre
+        <strong>lien Google</strong>.
+      </p>
+
+      <div class="bg-gray-100 p-3 rounded-md mb-6 text-sm text-left">
+        Exemple d’URL Google :
+        <span class="font-mono font-medium">https://g.page/nom-de-votre-commerce</span>
+      </div>
+
+      <form id="activationform" class="space-y-4 text-left">
+        <div>
+          <label for="code" class="block text-sm font-medium text-gray-700"
+            >Numéro de plaque</label
+          >
+          <input
+            id="code"
+            name="code"
+            type="text"
+            required
+            minlength="3"
+            class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:ring-gray-900 focus:border-gray-900"
+            placeholder="ex. A3HJ9"
+          />
+        </div>
+
+        <div>
+          <label
+            for="url_google"
+            class="block text-sm font-medium text-gray-700"
+            >Lien Google</label
+          >
+          <input
+            id="url_google"
+            name="url_google"
+            type="url"
+            required
+            class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:ring-gray-900 focus:border-gray-900"
+            placeholder="https://g.page/..."
+          />
+        </div>
+
+        <button
+          id="submitBtn"
+          type="submit"
+          class="w-full inline-flex items-center justify-center gap-2 rounded-md bg-gray-900 text-white py-2.5 font-medium hover:bg-black transition disabled:opacity-60"
+        >
+          Activer
+        </button>
+
+        <p id="status" class="text-sm text-gray-600 min-h-[1.5rem]"></p>
+
+        <img
+          id="okGif"
+          src="/activation_ok.gif"
+          alt="Activation ok"
+          class="mx-auto mt-2 hidden"
+        />
+      </form>
+
+      <p class="mt-6 text-center text-gray-500 text-sm">
+        Besoin d’aide ? Contactez-nous.
+      </p>
     </div>
 
-    <p class="text-gray-600 mb-6 text-left">
-      Entrez votre <strong>numéro de plaque</strong> et votre <strong>lien Google</strong>.
-    </p>
-
-    <div class="bg-gray-100 p-3 rounded-md mb-4 text-sm text-gray-700 font-mono text-left">
-      Exemple d’URL Google : https://g.page/nom-de-votre-commerce
-    </div>
-
-    <form id="activationForm" class="space-y-4 text-left">
-      <div>
-        <label for="codePlaque" class="block text-gray-800 font-medium mb-1">Numéro de plaque</label>
-        <input
-          type="text"
-          id="codePlaque"
-          name="codePlaque"
-          class="w-full border border-gray-300 rounded-lg px-3 py-2"
-          maxlength="10"
-          oninput="this.value=this.value.toUpperCase()"
-          required />
-      </div>
-
-      <div>
-        <label for="urlGoogle" class="block text-gray-800 font-medium mb-1">Lien Google</label>
-        <input type="url" id="urlGoogle" name="urlGoogle" class="w-full border border-gray-300 rounded-lg px-3 py-2" required />
-      </div>
-
-      <button 
-        type="submit" 
-        id="submitBtn" 
-        style="background-color: #BFA269; color: black;"
-        class="w-full font-bold uppercase py-2 rounded-lg transition transform hover:scale-[1.02]">
-        Valider l’activation
-      </button>
-
-      <div id="feedback" class="mt-4 text-center">
-        <p id="message" class="text-sm"></p>
-        <pre id="diag" class="text-xs text-gray-500 whitespace-pre-wrap mt-2"></pre>
-        <img id="successGif" src="/activation_ok.gif" alt="Activation réussie" class="mx-auto mt-3 hidden h-28">
-      </div>
-    </form>
-
-    <p class="mt-6 text-center text-gray-500 text-sm">
-      Besoin d’aide ? <a href="mailto:support@basothanmyconnect.fr" class="underline">Contactez le support</a>.
-    </p>
-  </div>
-
-  <script>
-    const API_BASE = 'https://plaques-nfc.vercel.app'; // 🔧 temporaire
-
-    const form = document.getElementById('activationForm');
-    const msg = document.getElementById('message');
-    const diag = document.getElementById('diag');
-    const gif = document.getElementById('successGif');
-    const submitBtn = document.getElementById('submitBtn');
-
-    function showMessage(text, type = 'info') {
-      msg.textContent = text;
-      msg.className = 'text-sm';
-      let cls = 'text-gray-700';
-      if (type === 'success') cls = 'text-green-600 font-medium';
-      if (type === 'error') cls = 'text-red-600 font-medium';
-      msg.classList.add(cls);
-    }
-
-    function showGif() {
-      gif.classList.remove('hidden');
-      setTimeout(() => gif.classList.add('hidden'), 4000);
-    }
-
-    form.addEventListener('submit', async (e) => {
-      e.preventDefault();
-      const codePlaque = document.getElementById('codePlaque').value.trim();
-      const urlGoogle = document.getElementById('urlGoogle').value.trim();
-      showMessage('Activation en cours...');
-      diag.textContent = '';
-      gif.classList.add('hidden');
-      submitBtn.disabled = true;
-      submitBtn.style.opacity = '0.7';
-
-      try {
-        const res = await fetch(`${API_BASE}/api/activate`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ code_plaque: codePlaque, url_google: urlGoogle })
-        });
-
-        const data = await res.json().catch(() => ({}));
-        diag.textContent = `status: ${res.status}\nresponse: ${JSON.stringify(data)}`;
-
-        if (data.ok) {
-          showMessage('✅ Plaque activée avec succès !', 'success');
-          showGif();
-          form.reset();
-        } else if (data.error) {
-          showMessage(data.error, 'error');
-        } else {
-          showMessage('Erreur inconnue. Réessaie.', 'error');
-        }
-      } catch (err) {
-        showMessage('Erreur réseau. Vérifie ta connexion et réessaie.', 'error');
-        diag.textContent = err.message;
-      } finally {
-        submitBtn.disabled = false;
-        submitBtn.style.opacity = '1';
-      }
-    });
-  </script>
-</body>
+    <!-- Ton script front -->
+    <script defer src="/app.js"></script>
+  </body>
 </html>
