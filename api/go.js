@@ -11,7 +11,6 @@ function redirect(res, to) {
 
 export default async function handler(req, res) {
   try {
-    // Appelé via /go/<code> (via une réécriture) OU /api/go?code=
     const code =
       req.query.code?.toString().trim() ||
       req.query.id?.toString().trim() ||
@@ -24,9 +23,12 @@ export default async function handler(req, res) {
     const token = process.env.BASEROW_TOKEN;
     if (!tableId || !token) return res.status(500).send("Server not configured.");
 
+    const headers = { Authorization: `Token ${token}` };
+
+    // 1) Charger un lot (simple). Pour gros volumes, on passera à un filtre serveur.
     const r = await fetch(
       `${api}/api/database/rows/table/${tableId}/?user_field_names=true&size=200`,
-      { headers: { Authorization: `Token ${token}` } }
+      { headers }
     );
     if (!r.ok) return res.status(r.status).send(await r.text());
     const data = await r.json();
@@ -35,11 +37,28 @@ export default async function handler(req, res) {
       (x) => (x.code_plaque || "").toString().trim().toLowerCase() === code.toLowerCase()
     );
 
-    if (row && row.url_google) {
-      return redirect(res, normHttps(row.url_google));
+    // 2) Si inconnue → page d'erreur élégante
+    if (!row) {
+      return redirect(res, `/erreur.html?code=${encodeURIComponent(code)}`);
     }
-    // Non configuré → page d’activation avec code prérempli
-    return redirect(res, `/?code=${encodeURIComponent(code)}`);
+
+    // 3) Si pas encore configurée → page d'activation préremplie
+    if (!row.url_google) {
+      return redirect(res, `/?code=${encodeURIComponent(code)}`);
+    }
+
+    // 4) Incrémenter le compteur puis rediriger
+    const current = Number(row.scan_count || 0);
+    await fetch(
+      `${api}/api/database/rows/table/${tableId}/${row.id}/?user_field_names=true`,
+      {
+        method: "PATCH",
+        headers: { ...headers, "Content-Type": "application/json" },
+        body: JSON.stringify({ scan_count: current + 1 }),
+      }
+    );
+
+    return redirect(res, normHttps(row.url_google));
   } catch (e) {
     return res.status(500).send(`Server error: ${e.message}`);
   }
