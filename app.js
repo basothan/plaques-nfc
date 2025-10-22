@@ -4,11 +4,18 @@
   const urlInput = document.getElementById("url_google");
   const statusEl = document.getElementById("status");
   const okEl = document.getElementById("ok");
+  const prefillBox = document.getElementById("prefillBox");
 
-  // Prérempli via /?code=<code> (envoyé par /api/go si pas configuré)
+  // Préremplir depuis ?code= (arrive de /api/go si pas configuré)
   const params = new URLSearchParams(window.location.search);
   const preCode = params.get("code");
-  if (preCode && codeInput) codeInput.value = preCode;
+  if (preCode && codeInput) {
+    codeInput.value = preCode;
+    if (prefillBox) {
+      prefillBox.classList.remove("hidden");
+      prefillBox.textContent = `Numéro détecté : ${preCode}`;
+    }
+  }
 
   function normalizeUrl(u) {
     const s = (u || "").trim();
@@ -40,11 +47,16 @@
         throw new Error(msg);
       }
 
+      // Succès : message + GIF + reset
       if (statusEl) statusEl.textContent = "✅ Activation réussie";
       if (okEl) okEl.classList.remove("hidden");
+      form.reset();
 
-      // Option: après succès, rediriger directement vers l’URL cible
-      // window.location.href = `/api/go?code=${encodeURIComponent(code_plaque)}`;
+      // Option : faire défiler jusqu'au bloc OK
+      okEl.scrollIntoView({ behavior: "smooth", block: "center" });
+
+      // Option : redirection auto vers la plaque configurée après 2s
+      // setTimeout(() => window.location.href = `/api/go?code=${encodeURIComponent(code_plaque)}`, 2000);
     } catch (err) {
       console.error(err);
       if (statusEl) statusEl.textContent = `❌ ${err.message || "Erreur inconnue"}`;
