@@ -21,11 +21,11 @@ export default async function handler(req, res) {
     const api = process.env.BASEROW_API_URL || "https://api.baserow.io";
     const tableId = process.env.BASEROW_TABLE_ID;
     const token = process.env.BASEROW_TOKEN;
-    if (!tableId || !token) return res.status(500).send("Server not configured.");
+    if (!tableId || !token)
+      return res.status(500).send("Server not configured.");
 
     const headers = { Authorization: `Token ${token}` };
 
-    // 1) Charger un lot (simple). Pour gros volumes, on passera à un filtre serveur.
     const r = await fetch(
       `${api}/api/database/rows/table/${tableId}/?user_field_names=true&size=200`,
       { headers }
@@ -34,20 +34,15 @@ export default async function handler(req, res) {
     const data = await r.json();
 
     const row = (data.results || []).find(
-      (x) => (x.code_plaque || "").toString().trim().toLowerCase() === code.toLowerCase()
+      (x) =>
+        (x.code_plaque || "").toString().trim().toLowerCase() ===
+        code.toLowerCase()
     );
 
-    // 2) Si inconnue → page d'erreur élégante
-    if (!row) {
-      return redirect(res, `/erreur.html?code=${encodeURIComponent(code)}`);
-    }
-
-    // 3) Si pas encore configurée → page d'activation préremplie
-    if (!row.url_google) {
+    if (!row) return redirect(res, `/erreur.html?code=${encodeURIComponent(code)}`);
+    if (!row.url_google)
       return redirect(res, `/?code=${encodeURIComponent(code)}`);
-    }
 
-    // 4) Incrémenter le compteur puis rediriger
     const current = Number(row.scan_count || 0);
     await fetch(
       `${api}/api/database/rows/table/${tableId}/${row.id}/?user_field_names=true`,
