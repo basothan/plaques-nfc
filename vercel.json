@@ -1,7 +1,7 @@
 {
   "version": 2,
   "builds": [{ "src": "api/**/*.js", "use": "@vercel/node" }],
-  "rewrites": [
-    { "source": "/r/:code", "destination": "/api/qr?code=:code" }
+  "redirects": [
+    { "source": "/r/:code", "destination": "/api/qr?code=:code", "permanent": false }
   ]
 }
