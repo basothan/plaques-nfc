@@ -1,0 +1,7 @@
+{
+  "version": 2,
+  "builds": [{ "src": "api/**/*.js", "use": "@vercel/node" }],
+  "redirects": [
+    { "source": "/r/(.*)", "destination": "/api/qr?code=$1", "permanent": false }
+  ]
+}
