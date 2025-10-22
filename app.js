@@ -3,7 +3,7 @@
   const codeInput = document.getElementById("code");
   const urlInput = document.getElementById("url_google");
   const statusEl = document.getElementById("status");
-  const okEl = document.getElementById("ok");
+  const okEl = document.getElementById("ok"); // peut être null
 
   function normalizeUrl(u) {
     const s = (u || "").trim();
@@ -15,12 +15,12 @@
 
   form.addEventListener("submit", async (e) => {
     e.preventDefault();
-    statusEl.textContent = "Activation en cours...";
-    okEl.classList.add("hidden");
+    if (statusEl) statusEl.textContent = "Activation en cours...";
+    if (okEl) okEl.classList.add("hidden");
 
     try {
-      const code_plaque = (codeInput.value || "").trim();
-      const url_google = normalizeUrl(urlInput.value);
+      const code_plaque = (codeInput?.value || "").trim();
+      const url_google = normalizeUrl(urlInput?.value);
       if (!code_plaque || !url_google) throw new Error("Champs manquants");
 
       const res = await fetch("/api/activate", {
@@ -35,11 +35,11 @@
         throw new Error(msg);
       }
 
-      statusEl.textContent = "✅ Activation réussie";
-      okEl.classList.remove("hidden");
+      if (statusEl) statusEl.textContent = "✅ Activation réussie";
+      if (okEl) okEl.classList.remove("hidden");
     } catch (err) {
       console.error(err);
-      statusEl.textContent = `❌ ${err.message || "Erreur inconnue"}`;
+      if (statusEl) statusEl.textContent = `❌ ${err.message || "Erreur inconnue"}`;
     }
   });
 })();
