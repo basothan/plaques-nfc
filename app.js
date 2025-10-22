@@ -3,7 +3,12 @@
   const codeInput = document.getElementById("code");
   const urlInput = document.getElementById("url_google");
   const statusEl = document.getElementById("status");
-  const okEl = document.getElementById("ok"); // peut être null
+  const okEl = document.getElementById("ok");
+
+  // Prérempli via /?code=<code> (envoyé par /api/go si pas configuré)
+  const params = new URLSearchParams(window.location.search);
+  const preCode = params.get("code");
+  if (preCode && codeInput) codeInput.value = preCode;
 
   function normalizeUrl(u) {
     const s = (u || "").trim();
@@ -26,7 +31,7 @@
       const res = await fetch("/api/activate", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ code_plaque, url_google })
+        body: JSON.stringify({ code_plaque, url_google }),
       });
 
       const data = await res.json().catch(() => ({}));
@@ -37,6 +42,9 @@
 
       if (statusEl) statusEl.textContent = "✅ Activation réussie";
       if (okEl) okEl.classList.remove("hidden");
+
+      // Option: après succès, rediriger directement vers l’URL cible
+      // window.location.href = `/api/go?code=${encodeURIComponent(code_plaque)}`;
     } catch (err) {
       console.error(err);
       if (statusEl) statusEl.textContent = `❌ ${err.message || "Erreur inconnue"}`;
