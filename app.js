@@ -7,20 +7,21 @@
   const okEl = document.getElementById("ok");
   const prefillBox = document.getElementById("prefillBox");
   const overlay = document.getElementById("redirectOverlay");
+  const page = document.getElementById("pageContent");
 
   const params = new URLSearchParams(window.location.search);
   const preCode = params.get("code");
 
-  function showRedirectOverlay() {
-    if (!overlay) return;
+  function showOverlay() {
     overlay.classList.remove("hidden");
     overlay.classList.add("flex");
+    if (page) page.style.display = "none";
   }
 
-  function hideRedirectOverlay() {
-    if (!overlay) return;
+  function hideOverlay() {
     overlay.classList.add("hidden");
     overlay.classList.remove("flex");
+    if (page) page.style.display = "block";
   }
 
   function normalizeUrl(u) {
@@ -29,32 +30,36 @@
     return /^https?:\/\//i.test(s) ? s : "https://" + s;
   }
 
-  // Vérifie si la plaque est déjà activée
+  // ⚙️ Dès le chargement : vérifie si plaque déjà activée
   if (preCode) {
-    if (codeInput) {
-      codeInput.value = preCode;
-      if (prefillBox) {
-        prefillBox.classList.remove("hidden");
-        prefillBox.textContent = `Numéro détecté : ${preCode}`;
-      }
-    }
+    showOverlay(); // logo affiché immédiatement
 
     fetch(`/api/debug?id=${encodeURIComponent(preCode)}`)
       .then(r => r.json())
       .then(data => {
         if (data && data.found && data.found.url_google) {
-          showRedirectOverlay();
+          // ✅ Plaque déjà activée → redirection directe
           setTimeout(() => {
             window.location.href = data.found.url_google;
           }, 200);
         } else {
-          hideRedirectOverlay();
+          // ❌ Plaque non activée → on montre le formulaire
+          hideOverlay();
+          if (codeInput) {
+            codeInput.value = preCode;
+            if (prefillBox) {
+              prefillBox.classList.remove("hidden");
+              prefillBox.textContent = `Numéro détecté : ${preCode}`;
+            }
+          }
         }
       })
       .catch(err => {
         console.error("Erreur vérif activation:", err);
-        hideRedirectOverlay();
+        hideOverlay();
       });
+  } else {
+    hideOverlay();
   }
 
   if (!form) return;
@@ -86,8 +91,8 @@
       form.reset();
       okEl.scrollIntoView({ behavior: "smooth", block: "center" });
 
-      // Optionnel : redirection auto après activation :
-      // showRedirectOverlay();
+      // Optionnel : activer redirection auto après activation
+      // showOverlay();
       // setTimeout(() => window.location.href = `/api/qr?code=${encodeURIComponent(code_plaque)}`, 800);
 
     } catch (err) {
