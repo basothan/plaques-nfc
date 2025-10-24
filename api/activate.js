@@ -22,24 +22,51 @@ export default async function handler(req, res) {
       Authorization: `Token ${token}`,
     };
 
-    // 1) Chercher une ligne existante par code_plaque
-    let existing = null;
-    {
-      const r = await fetch(`${api}/api/database/rows/table/${tableId}/?user_field_names=true&size=200`, {
-        headers,
-      });
-      const data = await r.json();
-      if (r.ok) {
-        existing = (data.results || []).find(
-          (x) => (x.code_plaque || "").toString().trim().toLowerCase() === code_plaque.toLowerCase()
+    // --- Helpers ---
+    async function fetchAllRows() {
+      let out = [];
+      let next = `${api}/api/database/rows/table/${tableId}/?user_field_names=true&size=200`;
+      while (next) {
+        const r = await fetch(next, { headers: { Authorization: `Token ${token}` } });
+        if (!r.ok) {
+          const txt = await r.text().catch(() => "");
+          throw new Error(`Baserow list failed: ${r.status} ${txt}`);
+        }
+        const data = await r.json();
+        out = out.concat(data.results || []);
+        next = data.next;
+      }
+      return out;
+    }
+
+    async function resolveActifOuiValue() {
+      // Essaie de trouver l'ID de l'option "oui" si 'actif' est un single_select.
+      try {
+        const r = await fetch(`${api}/api/database/fields/table/${tableId}/?user_field_names=true`, { headers });
+        if (!r.ok) return "oui";
+        const fields = await r.json();
+        const actifField = (fields || []).find(f => (f.name || "").toLowerCase() === "actif" && f.type === "single_select");
+        const optionOui = actifField?.select_options?.find(o =>
+          ((o.value || o.name || "") + "").trim().toLowerCase() === "oui"
         );
+        return optionOui?.id ?? "oui";
+      } catch {
+        return "oui"; // fallback: champ texte
       }
     }
 
+    // 1) Chercher une ligne existante par code_plaque (pagination illimitée)
+    const rows = await fetchAllRows();
+    const existing = rows.find(
+      (x) => (x.code_plaque || "").toString().trim().toLowerCase() === code_plaque.toLowerCase()
+    );
+
+    // 2) Prépare payload (actif compatible texte/select)
+    const actifOui = await resolveActifOuiValue();
     const payload = {
       code_plaque,
       url_google,
-      actif: "oui",
+      actif: actifOui, // "oui" (si texte) ou ID (si select)
       date_activation: new Date().toISOString().slice(0, 10), // YYYY-MM-DD
     };
 
@@ -50,7 +77,7 @@ export default async function handler(req, res) {
         headers,
         body: JSON.stringify(payload),
       });
-      const d2 = await r2.json();
+      const d2 = await r2.json().catch(() => ({}));
       if (!r2.ok) return res.status(r2.status).json({ error: d2 });
       return res.status(200).json({ ok: true, id: d2.id, message: "Activation mise à jour" });
     } else {
@@ -60,7 +87,7 @@ export default async function handler(req, res) {
         headers,
         body: JSON.stringify(payload),
       });
-      const d3 = await r3.json();
+      const d3 = await r3.json().catch(() => ({}));
       if (!r3.ok) return res.status(r3.status).json({ error: d3 });
       return res.status(200).json({ ok: true, id: d3.id, message: "Activation créée" });
     }
