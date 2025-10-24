@@ -23,16 +23,14 @@
     overlay.classList.remove("flex");
   }
 
-  // Normalise une URL (ajoute https si manquant)
   function normalizeUrl(u) {
     const s = (u || "").trim();
     if (!s) return s;
     return /^https?:\/\//i.test(s) ? s : "https://" + s;
   }
 
-  // Check si plaque existante et redirige automatiquement si elle a un url_google
+  // Vérifie si la plaque est déjà activée
   if (preCode) {
-    // Préremplissage du champ code (même si on redirige ensuite)
     if (codeInput) {
       codeInput.value = preCode;
       if (prefillBox) {
@@ -41,19 +39,15 @@
       }
     }
 
-    // Vérification côté serveur
     fetch(`/api/debug?id=${encodeURIComponent(preCode)}`)
       .then(r => r.json())
       .then(data => {
         if (data && data.found && data.found.url_google) {
-          // Montre l'overlay, petit délai pour laisser le rendu, puis redirection
           showRedirectOverlay();
           setTimeout(() => {
-            // redirige vers l'URL Google (déjà normalisée côté Baserow normalement)
             window.location.href = data.found.url_google;
-          }, 160);
+          }, 200);
         } else {
-          // pas d'URL -> reste sur la page d'activation
           hideRedirectOverlay();
         }
       })
@@ -87,16 +81,14 @@
         throw new Error(msg);
       }
 
-      // Succès : message + GIF + reset
       if (statusEl) statusEl.textContent = "✅ Activation réussie";
       if (okEl) okEl.classList.remove("hidden");
       form.reset();
-
       okEl.scrollIntoView({ behavior: "smooth", block: "center" });
 
-      // Si tu veux rediriger automatiquement après activation (décommenter) :
+      // Optionnel : redirection auto après activation :
       // showRedirectOverlay();
-      // setTimeout(() => window.location.href = `/api/qr?code=${encodeURIComponent(code_plaque)}`, 600);
+      // setTimeout(() => window.location.href = `/api/qr?code=${encodeURIComponent(code_plaque)}`, 800);
 
     } catch (err) {
       console.error(err);
