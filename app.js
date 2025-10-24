@@ -6,9 +6,22 @@
   const okEl = document.getElementById("ok");
   const prefillBox = document.getElementById("prefillBox");
 
-  // Préremplir depuis ?code= (arrive de /api/go si pas configuré)
   const params = new URLSearchParams(window.location.search);
   const preCode = params.get("code");
+
+  // ✅ Vérifie si la plaque est déjà activée
+  if (preCode) {
+    fetch(`/api/debug?id=${preCode}`)
+      .then(r => r.json())
+      .then(data => {
+        if (data.found && data.found.url_google) {
+          // redirection directe vers le lien Google
+          window.location.href = data.found.url_google;
+        }
+      })
+      .catch(err => console.error("Erreur vérif activation:", err));
+  }
+
   if (preCode && codeInput) {
     codeInput.value = preCode;
     if (prefillBox) {
@@ -47,16 +60,11 @@
         throw new Error(msg);
       }
 
-      // Succès : message + GIF + reset
       if (statusEl) statusEl.textContent = "✅ Activation réussie";
       if (okEl) okEl.classList.remove("hidden");
       form.reset();
-
-      // Option : faire défiler jusqu'au bloc OK
       okEl.scrollIntoView({ behavior: "smooth", block: "center" });
 
-      // Option : redirection auto vers la plaque configurée après 2s
-      // setTimeout(() => window.location.href = `/api/go?code=${encodeURIComponent(code_plaque)}`, 2000);
     } catch (err) {
       console.error(err);
       if (statusEl) statusEl.textContent = `❌ ${err.message || "Erreur inconnue"}`;
