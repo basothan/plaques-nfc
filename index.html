@@ -40,10 +40,25 @@
         animation: redirect-load 1.2s linear infinite;
         background: #000;
       }
+
+      /* Masquer la page tant qu'on ne sait pas si plaque active */
+      #pageContent { display: none; }
     </style>
   </head>
   <body class="bg-white min-h-screen flex items-center justify-center">
-    <div class="mx-auto max-w-lg p-6 w-full">
+
+    <!-- Overlay par défaut visible -->
+    <div id="redirectOverlay"
+         class="fixed inset-0 bg-white flex items-center justify-center z-50">
+      <div class="flex flex-col items-center">
+        <img src="/logo.png" alt="logo" class="h-10 w-auto mb-4" />
+        <div class="progress-bar rounded-full"><span></span></div>
+        <p class="mt-3 text-gray-700 text-sm">Redirection en cours…</p>
+      </div>
+    </div>
+
+    <!-- Contenu principal (masqué au début) -->
+    <div id="pageContent" class="mx-auto max-w-lg p-6 w-full">
       <div class="flex items-center gap-3 mb-6">
         <img src="/logo.png" alt="logo" class="h-8 w-auto" />
       </div>
@@ -86,16 +101,6 @@
             VOTRE PLAQUE EST DÉSORMAIS ACTIVÉE
           </p>
         </div>
-      </div>
-    </div>
-
-    <!-- Overlay redirection -->
-    <div id="redirectOverlay"
-         class="hidden fixed inset-0 bg-white items-center justify-center z-50">
-      <div class="flex flex-col items-center">
-        <img src="/logo.png" alt="logo" class="h-10 w-auto mb-4" />
-        <div class="progress-bar rounded-full"><span></span></div>
-        <p class="mt-3 text-gray-700 text-sm">Redirection en cours…</p>
       </div>
     </div>
 
