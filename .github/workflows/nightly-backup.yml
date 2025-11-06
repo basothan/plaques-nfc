@@ -1,0 +1,40 @@
+name: Nightly Backup
+
+on:
+  schedule:
+    - cron: "0 3 * * *"   # Tous les jours à 03:00 UTC
+  workflow_dispatch:      # Lancement manuel possible
+
+jobs:
+  backup:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout source
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Create archive
+        run: |
+          mkdir -p backup
+          TS=$(date +"%Y-%m-%d_%H-%M")
+          ZIP="basothanmyconnect_${TS}.zip"
+          # Exclure le dossier .git pour alléger le ZIP
+          zip -r "backup/$ZIP" . -x "*.git*"
+
+          echo "ZIP_NAME=$ZIP" >> $GITHUB_ENV
+
+      - name: Prepare backup repo
+        run: |
+          git config --global user.name "basothan-backup-bot"
+          git config --global user.email "backup@basothan.fr"
+          git clone https://x-access-token:${{ secrets.GH_PAT }}@github.com/${{ secrets.BACKUP_REPO }} backup_repo
+
+      - name: Commit archive to backup repo
+        run: |
+          cp backup/${{ env.ZIP_NAME }} backup_repo/
+          cd backup_repo
+          git add .
+          git commit -m "Backup: ${{ env.ZIP_NAME }}"
+          git push origin main
