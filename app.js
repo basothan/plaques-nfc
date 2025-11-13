@@ -1,103 +1,68 @@
-// /app.js
-(function () {
-  const form = document.getElementById("activationform");
-  const codeInput = document.getElementById("code");
-  const urlInput = document.getElementById("url_google");
-  const statusEl = document.getElementById("status");
-  const okEl = document.getElementById("ok");
-  const prefillBox = document.getElementById("prefillBox");
-  const overlay = document.getElementById("redirectOverlay");
-  const page = document.getElementById("pageContent");
+// app.js
 
+document.addEventListener("DOMContentLoaded", () => {
   const params = new URLSearchParams(window.location.search);
-  const preCode = params.get("code");
+  const initialCode = (params.get("code") || "").toUpperCase();
 
-  function showOverlay() {
-    overlay.classList.remove("hidden");
-    overlay.classList.add("flex");
-    if (page) page.style.display = "none";
+  const homeSection = document.getElementById("home-section");
+  const plaqueSection = document.getElementById("plaque-section");
+  const menuSection = document.getElementById("menu-section");
+
+  const globalCodeInput = document.getElementById("global-code");
+  const plaqueCodeInput = document.getElementById("plaque-code");
+  const menuCodeInput = document.getElementById("menu-code");
+
+  const btnPlaque = document.getElementById("btn-plaque");
+  const btnCard = document.getElementById("btn-card");
+  const btnMenu = document.getElementById("btn-menu");
+
+  const plaqueBack = document.getElementById("plaque-back");
+  const menuBack = document.getElementById("menu-back");
+
+  // Pré-remplir le code si present dans l'URL
+  if (initialCode) {
+    globalCodeInput.value = initialCode;
+    plaqueCodeInput.value = initialCode;
+    menuCodeInput.value = initialCode;
   }
 
-  function hideOverlay() {
-    overlay.classList.add("hidden");
-    overlay.classList.remove("flex");
-    if (page) page.style.display = "block";
+  function showHome() {
+    homeSection.classList.remove("hidden");
+    plaqueSection.classList.add("hidden");
+    menuSection.classList.add("hidden");
   }
 
-  function normalizeUrl(u) {
-    const s = (u || "").trim();
-    if (!s) return s;
-    return /^https?:\/\//i.test(s) ? s : "https://" + s;
+  function showPlaque() {
+    // Sync du code global vers la plaque
+    plaqueCodeInput.value = globalCodeInput.value.toUpperCase();
+    homeSection.classList.add("hidden");
+    plaqueSection.classList.remove("hidden");
+    menuSection.classList.add("hidden");
   }
 
-  // ⚙️ Dès le chargement : vérifie si plaque déjà activée
-  if (preCode) {
-    showOverlay(); // logo affiché immédiatement
-
-    fetch(`/api/debug?id=${encodeURIComponent(preCode)}`)
-      .then(r => r.json())
-      .then(data => {
-        if (data && data.found && data.found.url_google) {
-          // ✅ Plaque déjà activée → redirection directe
-          setTimeout(() => {
-            window.location.href = data.found.url_google;
-          }, 200);
-        } else {
-          // ❌ Plaque non activée → on montre le formulaire
-          hideOverlay();
-          if (codeInput) {
-            codeInput.value = preCode;
-            if (prefillBox) {
-              prefillBox.classList.remove("hidden");
-              prefillBox.textContent = `Numéro détecté : ${preCode}`;
-            }
-          }
-        }
-      })
-      .catch(err => {
-        console.error("Erreur vérif activation:", err);
-        hideOverlay();
-      });
-  } else {
-    hideOverlay();
+  function showMenu() {
+    menuCodeInput.value = globalCodeInput.value.toUpperCase();
+    homeSection.classList.add("hidden");
+    plaqueSection.classList.add("hidden");
+    menuSection.classList.remove("hidden");
   }
 
-  if (!form) return;
-
-  form.addEventListener("submit", async (e) => {
-    e.preventDefault();
-    if (statusEl) statusEl.textContent = "Activation en cours...";
-    if (okEl) okEl.classList.add("hidden");
-
-    try {
-      const code_plaque = (codeInput?.value || "").trim();
-      const url_google = normalizeUrl(urlInput?.value);
-      if (!code_plaque || !url_google) throw new Error("Champs manquants");
-
-      const res = await fetch("/api/activate", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ code_plaque, url_google }),
-      });
-
-      const data = await res.json().catch(() => ({}));
-      if (!res.ok) {
-        const msg = data?.error?.detail || data?.error?.message || data?.error || `Erreur ${res.status}`;
-        throw new Error(msg);
-      }
-
-      if (statusEl) statusEl.textContent = "✅ Activation réussie";
-      if (okEl) okEl.classList.remove("hidden");
-      form.reset();
-      okEl.scrollIntoView({ behavior: "smooth", block: "center" });
-
-      // Optionnel : activer redirection auto après activation
-      // showOverlay();
-      // setTimeout(() => window.location.href = `/api/qr?code=${encodeURIComponent(code_plaque)}`, 800);
-
-    } catch (err) {
-      console.error(err);
-      if (statusEl) statusEl.textContent = `❌ ${err.message || "Erreur inconnue"}`;
-    }
+  btnPlaque.addEventListener("click", () => {
+    showPlaque();
   });
-})();
+
+  btnMenu.addEventListener("click", () => {
+    showMenu();
+  });
+
+  btnCard.addEventListener("click", () => {
+    const code = globalCodeInput.value.trim().toUpperCase();
+    const base = "https://macarte.basothan.fr/activate";
+    // Si tu veux passer le code en paramètre :
+    const url = code ? `${base}?code=${encodeURIComponent(code)}` : base;
+    window.location.href = url;
+  });
+
+  plaqueBack.addEventListener("click", showHome);
+  menuBack.addEventListener("click", showHome);
+});
