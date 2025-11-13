@@ -243,6 +243,10 @@
           background-color 0.15s ease, transform 0.1s ease;
       }
 
+      .field input[type="file"] {
+        border-radius: 16px;
+      }
+
       .field input:focus {
         border-color: rgba(223, 150, 231, 0.9);
         background-color: rgba(255, 255, 255, 0.6);
@@ -387,7 +391,7 @@
             <button id="btn-menu" class="option-card" type="button">
               <span class="option-title">Menu / Carte PDF</span>
               <span class="option-desc">
-                Associez un menu au format PDF à votre plaque.
+                Téléversez un menu PDF et associez-le à votre plaque.
               </span>
             </button>
           </div>
@@ -414,10 +418,6 @@
 
           <div id="plaque-alert" class="alert hidden"></div>
 
-          <!--
-            IMPORTANT :
-            Adapte le name="..." des inputs en fonction de ce que ton /api/activate attend.
-          -->
           <form class="form" action="/api/activate" method="POST">
             <div class="field">
               <label for="plaque-code">Numéro de plaque</label>
@@ -450,21 +450,24 @@
           <div id="menu-back" class="back-link">Retour au choix</div>
           <h1 class="title">ASSOCIER UN MENU</h1>
           <p class="subtitle">
-            Associez un menu au format PDF à votre plaque pour un accès
-            instantané.
+            Téléversez un menu au format PDF ou collez le lien vers votre menu
+            existant.
           </p>
 
           <div class="info-box">
-            Hébergez votre PDF (site, Google Drive, Dropbox, etc.) et collez le
-            <strong>lien public</strong> ci-dessous.
+            Vous pouvez soit héberger votre PDF (site, Drive, Dropbox, etc.) et
+            coller le lien, soit importer directement le fichier PDF ci-dessous.
           </div>
 
           <div id="menu-alert" class="alert hidden"></div>
 
-          <!--
-            Cette action suppose que tu créeras /api/menu côté serveur.
-          -->
-          <form class="form" action="/api/menu" method="POST">
+          <!-- enctype pour l'upload de fichier -->
+          <form
+            class="form"
+            action="/api/menu"
+            method="POST"
+            enctype="multipart/form-data"
+          >
             <div class="field">
               <label for="menu-code">Numéro de plaque</label>
               <input
@@ -477,13 +480,22 @@
             </div>
 
             <div class="field">
-              <label for="menu-url">Lien du menu (PDF)</label>
+              <label for="menu-url">Lien du menu (PDF) – optionnel</label>
               <input
                 id="menu-url"
                 name="pdfUrl"
                 type="url"
                 placeholder="https://mon-site.com/menu.pdf"
-                required
+              />
+            </div>
+
+            <div class="field">
+              <label for="menu-file">Ou importer le fichier PDF</label>
+              <input
+                id="menu-file"
+                name="pdfFile"
+                type="file"
+                accept="application/pdf"
               />
             </div>
 
