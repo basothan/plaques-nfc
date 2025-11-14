@@ -1,0 +1,299 @@
+<!DOCTYPE html>
+<html lang="fr">
+  <head>
+    <meta charset="UTF-8" />
+    <title>Configurer ma plaque – Basothan MyConnect</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <style>
+      *,
+      *::before,
+      *::after {
+        box-sizing: border-box;
+      }
+
+      html,
+      body {
+        margin: 0;
+        padding: 0;
+        font-family: system-ui, -apple-system, BlinkMacSystemFont;
+        background: #ffffff;
+        color: #111;
+      }
+
+      body {
+        min-height: 100vh;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 24px 16px;
+      }
+
+      .app {
+        width: 100%;
+        max-width: 480px;
+      }
+
+      .card {
+        background: #ffffff;
+        border-radius: 28px;
+        padding: 24px 20px;
+        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.07);
+      }
+
+      .logo-row {
+        text-align: center;
+        margin-bottom: 18px;
+      }
+
+      .logo-row img {
+        height: 38px;
+      }
+
+      .card-title {
+        margin: 0 0 8px;
+        font-size: 20px;
+        text-align: center;
+        letter-spacing: 0.1em;
+        text-transform: uppercase;
+        font-weight: 700;
+      }
+
+      .card-subtitle {
+        margin: 0 0 18px;
+        text-align: center;
+        font-size: 14px;
+        color: #666;
+      }
+
+      .field {
+        margin-bottom: 14px;
+      }
+
+      .field label {
+        display: block;
+        font-size: 12px;
+        font-weight: 600;
+        margin-bottom: 5px;
+        text-transform: uppercase;
+        color: #333;
+      }
+
+      .field input {
+        width: 100%;
+        padding: 12px 14px;
+        border-radius: 999px;
+        border: 1px solid #ddd;
+        font-size: 14px;
+        outline: none;
+        background: #fff;
+      }
+
+      .field input:focus {
+        border-color: #d39eea;
+        box-shadow: 0 0 0 2px rgba(211, 158, 234, 0.3);
+      }
+
+      .btn-row {
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+        margin-top: 6px;
+      }
+
+      .btn {
+        width: 100%;
+        padding: 12px 16px;
+        border-radius: 999px;
+        border: none;
+        cursor: pointer;
+        text-transform: uppercase;
+        letter-spacing: 0.12em;
+        font-size: 12px;
+        font-weight: 600;
+      }
+
+      .btn-gradient {
+        background: linear-gradient(120deg, #df96e7, #d2b179);
+        color: #000;
+        text-decoration: underline;
+      }
+
+      .btn-ghost {
+        background: #f5f5f5;
+        color: #333;
+        border: 1px solid #ddd;
+      }
+
+      .small {
+        font-size: 12px;
+        text-align: center;
+        color: #777;
+        margin-top: 10px;
+      }
+
+      .error {
+        color: #b3261e;
+      }
+
+      .success {
+        color: #166534;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="app">
+      <div class="logo-row">
+        <img src="/logo.png" alt="Basothan" />
+      </div>
+
+      <div class="card">
+        <h1 class="card-title">Configurer ma plaque</h1>
+        <p class="card-subtitle">
+          Entrez votre <strong>numéro de plaque</strong> et le lien que vous
+          souhaitez ouvrir (Google, Instagram, site web, menu…).
+        </p>
+
+        <form id="config-form">
+          <div class="field">
+            <label for="code-input">Numéro de plaque</label>
+            <input
+              id="code-input"
+              name="code"
+              type="text"
+              placeholder="Ex : BT0A9"
+              required
+            />
+          </div>
+
+          <div class="field">
+            <label for="url-input">Lien à ouvrir</label>
+            <input
+              id="url-input"
+              name="url"
+              type="url"
+              placeholder="https://g.page/mon-commerce ou https://instagram.com/..."
+              required
+            />
+          </div>
+
+          <div class="btn-row">
+            <button type="button" id="load-btn" class="btn btn-ghost">
+              Charger le lien actuel
+            </button>
+            <button type="submit" id="save-btn" class="btn btn-gradient">
+              Enregistrer
+            </button>
+          </div>
+
+          <p id="form-message" class="small"></p>
+        </form>
+      </div>
+    </div>
+
+    <script>
+      (function () {
+        const form = document.getElementById("config-form");
+        const codeInput = document.getElementById("code-input");
+        const urlInput = document.getElementById("url-input");
+        const loadBtn = document.getElementById("load-btn");
+        const saveBtn = document.getElementById("save-btn");
+        const formMessage = document.getElementById("form-message");
+
+        function setMessage(text, type) {
+          formMessage.textContent = text || "";
+          formMessage.className = "small";
+          if (type === "error") formMessage.classList.add("error");
+          if (type === "success") formMessage.classList.add("success");
+        }
+
+        // Charger le lien déjà enregistré (si existe)
+        loadBtn.addEventListener("click", function () {
+          const code = (codeInput.value || "").trim().toUpperCase();
+          if (!code) {
+            setMessage("Veuillez d'abord entrer un numéro de plaque.", "error");
+            return;
+          }
+
+          setMessage("Recherche du lien actuel…", null);
+
+          fetch("/api/qr?code=" + encodeURIComponent(code) + "&info=1")
+            .then((r) => r.json())
+            .then((data) => {
+              if (!data.ok || !data.hasRow) {
+                setMessage(
+                  "Aucune plaque trouvée pour ce numéro. Vous pouvez en créer une nouvelle.",
+                  "error"
+                );
+                urlInput.value = "";
+                return;
+              }
+
+              if (data.configured && data.url) {
+                urlInput.value = data.url;
+                setMessage("Lien actuel chargé. Vous pouvez le modifier.", "success");
+              } else {
+                urlInput.value = "";
+                setMessage(
+                  "La plaque existe mais aucun lien n'est encore configuré.",
+                  "success"
+                );
+              }
+            })
+            .catch(() => {
+              setMessage("Erreur lors de la récupération des informations.", "error");
+            });
+        });
+
+        // Enregistrer / mettre à jour le lien
+        form.addEventListener("submit", function (e) {
+          e.preventDefault();
+          setMessage("", null);
+
+          const code = (codeInput.value || "").trim().toUpperCase();
+          const url = (urlInput.value || "").trim();
+
+          if (!code || !url) {
+            setMessage("Veuillez remplir le numéro de plaque et le lien.", "error");
+            return;
+          }
+
+          saveBtn.disabled = true;
+          loadBtn.disabled = true;
+          setMessage("Enregistrement en cours…", null);
+
+          const fd = new FormData();
+          fd.set("code", code);
+          fd.set("url", url);
+
+          fetch("/api/activate", {
+            method: "POST",
+            body: fd,
+          })
+            .then((r) => r.json())
+            .then((data) => {
+              saveBtn.disabled = false;
+              loadBtn.disabled = false;
+
+              if (!data.ok) {
+                setMessage(
+                  data.error || "Erreur lors de l'enregistrement.",
+                  "error"
+                );
+                return;
+              }
+
+              setMessage(
+                "Lien enregistré ! Vous pouvez maintenant scanner votre plaque.",
+                "success"
+              );
+            })
+            .catch(() => {
+              saveBtn.disabled = false;
+              loadBtn.disabled = false;
+              setMessage("Erreur réseau pendant l'enregistrement.", "error");
+            });
+        });
+      })();
+    </script>
+  </body>
+</html>
