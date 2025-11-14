@@ -1,6 +1,5 @@
 // api/menu.js
 
-// On utilise une Edge Function pour avoir accès à Request, FormData, File, etc.
 export const config = {
   runtime: "edge",
 };
@@ -8,12 +7,23 @@ export const config = {
 const BASEROW_API_URL =
   process.env.BASEROW_API_URL || "https://api.baserow.io";
 const BASEROW_API_TOKEN = process.env.BASEROW_API_TOKEN;
-// ⚠️ À définir dans Vercel : BASEROW_MENU_TABLE_ID
 const BASEROW_MENU_TABLE_ID = process.env.BASEROW_MENU_TABLE_ID;
 
 export default async function handler(req) {
   if (req.method !== "POST") {
     return new Response("Method not allowed", { status: 405 });
+  }
+
+  // 🔍 Check des env vars avec message précis
+  const missing = [];
+  if (!BASEROW_API_TOKEN) missing.push("BASEROW_API_TOKEN");
+  if (!BASEROW_MENU_TABLE_ID) missing.push("BASEROW_MENU_TABLE_ID");
+
+  if (missing.length) {
+    return new Response(
+      "Missing env: " + missing.join(", "),
+      { status: 500 }
+    );
   }
 
   try {
@@ -27,13 +37,9 @@ export default async function handler(req) {
       return new Response("Missing code", { status: 400 });
     }
 
-    if (!BASEROW_API_TOKEN || !BASEROW_MENU_TABLE_ID) {
-      return new Response("Baserow not configured", { status: 500 });
-    }
-
     let finalPdfUrl = pdfUrlFromForm;
 
-    // 1) Si un fichier PDF est envoyé, on l'upload vers Baserow
+    // 1) Upload du fichier PDF si présent
     if (file instanceof File && file.size > 0) {
       const fd = new FormData();
       fd.set("file", file, file.name);
@@ -61,15 +67,13 @@ export default async function handler(req) {
       finalPdfUrl = uploaded.url;
     }
 
-    // Si pas de lien final → erreur
     if (!finalPdfUrl) {
       return new Response("Vous devez fournir un lien ou un fichier PDF.", {
         status: 400,
       });
     }
 
-    // 2) Enregistrement dans la table Baserow "Menus"
-    // Champs attendus : "Code" (texte) et "Lien PDF" (texte)
+    // 2) Création de la ligne dans la table "Menus"
     const payload = {
       Code: code,
       "Lien PDF": finalPdfUrl,
