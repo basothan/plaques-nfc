@@ -1,97 +1,159 @@
-// /api/activate.js
-export default async function handler(req, res) {
-  if (req.method !== "POST") {
-    return res.status(405).json({ error: "Method Not Allowed" });
-  }
+// api/activate.js
 
+export const config = {
+  runtime: "edge",
+};
+
+const BASEROW_API_URL =
+  process.env.BASEROW_API_URL || "https://api.baserow.io";
+
+const BASEROW_API_TOKEN =
+  process.env.BASEROW_API_TOKEN ||
+  process.env.BASEROW_TOKEN ||
+  process.env.BASEROW_API_KEY;
+
+const BASEROW_TABLE_ID = process.env.BASEROW_TABLE_ID;
+
+function json(data, status = 200) {
+  return new Response(JSON.stringify(data, null, 2), {
+    status,
+    headers: { "content-type": "application/json; charset=utf-8" },
+  });
+}
+
+export default async function handler(req) {
   try {
-    const { code_plaque, url_google } = req.body || {};
-    if (!code_plaque || !url_google) {
-      return res.status(400).json({ error: "Champs manquants" });
+    if (req.method !== "POST") {
+      return json({ ok: false, error: "Méthode non autorisée" }, 405);
     }
 
-    const api = process.env.BASEROW_API_URL || "https://api.baserow.io";
-    const tableId = process.env.BASEROW_TABLE_ID;
-    const token = process.env.BASEROW_TOKEN;
-    if (!tableId || !token) {
-      return res.status(500).json({ error: "Env manquantes (BASEROW_*)." });
+    if (!BASEROW_API_TOKEN || !BASEROW_TABLE_ID) {
+      return json(
+        { ok: false, error: "Baserow non configuré (env manquantes)" },
+        500
+      );
     }
 
-    const headers = {
-      "Content-Type": "application/json",
-      Authorization: `Token ${token}`,
-    };
+    const form = await req.formData();
+    const code = (form.get("code") || "").toString().trim().toUpperCase();
+    const url = (form.get("url") || "").toString().trim();
 
-    // --- Helpers ---
-    async function fetchAllRows() {
-      let out = [];
-      let next = `${api}/api/database/rows/table/${tableId}/?user_field_names=true&size=200`;
-      while (next) {
-        const r = await fetch(next, { headers: { Authorization: `Token ${token}` } });
-        if (!r.ok) {
-          const txt = await r.text().catch(() => "");
-          throw new Error(`Baserow list failed: ${r.status} ${txt}`);
-        }
-        const data = await r.json();
-        out = out.concat(data.results || []);
-        next = data.next;
+    if (!code || !url) {
+      return json(
+        { ok: false, error: "Champs manquants (code ou url vide)" },
+        400
+      );
+    }
+
+    const today = new Date().toISOString().slice(0, 10); // YYYY-MM-DD
+
+    // 1) Chercher si une ligne existe déjà pour ce code_plaque
+    const searchRes = await fetch(
+      `${BASEROW_API_URL}/api/database/rows/table/${BASEROW_TABLE_ID}/?user_field_names=true&search=${encodeURIComponent(
+        code
+      )}&size=1`,
+      {
+        headers: { Authorization: `Token ${BASEROW_API_TOKEN}` },
       }
-      return out;
-    }
-
-    async function resolveActifOuiValue() {
-      // Essaie de trouver l'ID de l'option "oui" si 'actif' est un single_select.
-      try {
-        const r = await fetch(`${api}/api/database/fields/table/${tableId}/?user_field_names=true`, { headers });
-        if (!r.ok) return "oui";
-        const fields = await r.json();
-        const actifField = (fields || []).find(f => (f.name || "").toLowerCase() === "actif" && f.type === "single_select");
-        const optionOui = actifField?.select_options?.find(o =>
-          ((o.value || o.name || "") + "").trim().toLowerCase() === "oui"
-        );
-        return optionOui?.id ?? "oui";
-      } catch {
-        return "oui"; // fallback: champ texte
-      }
-    }
-
-    // 1) Chercher une ligne existante par code_plaque (pagination illimitée)
-    const rows = await fetchAllRows();
-    const existing = rows.find(
-      (x) => (x.code_plaque || "").toString().trim().toLowerCase() === code_plaque.toLowerCase()
     );
 
-    // 2) Prépare payload (actif compatible texte/select)
-    const actifOui = await resolveActifOuiValue();
+    if (!searchRes.ok) {
+      const t = await searchRes.text();
+      console.error("Baserow search error", searchRes.status, t);
+      return json(
+        {
+          ok: false,
+          error: "Erreur Baserow (search)",
+          status: searchRes.status,
+        },
+        500
+      );
+    }
+
+    const searchList = await searchRes.json();
+    const existingRow = Array.isArray(searchList?.results)
+      ? searchList.results[0]
+      : null;
+
     const payload = {
-      code_plaque,
-      url_google,
-      actif: actifOui, // "oui" (si texte) ou ID (si select)
-      date_activation: new Date().toISOString().slice(0, 10), // YYYY-MM-DD
+      code_plaque: code,
+      url_google: url,
+      actif: true,
+      date_activation: today,
     };
 
-    if (existing?.id) {
-      // Mise à jour
-      const r2 = await fetch(`${api}/api/database/rows/table/${tableId}/${existing.id}/?user_field_names=true`, {
-        method: "PATCH",
-        headers,
-        body: JSON.stringify(payload),
-      });
-      const d2 = await r2.json().catch(() => ({}));
-      if (!r2.ok) return res.status(r2.status).json({ error: d2 });
-      return res.status(200).json({ ok: true, id: d2.id, message: "Activation mise à jour" });
+    let finalRowId = null;
+
+    if (existingRow && existingRow.id) {
+      // 2a) UPDATE si la ligne existe déjà
+      const updateRes = await fetch(
+        `${BASEROW_API_URL}/api/database/rows/table/${BASEROW_TABLE_ID}/${existingRow.id}/?user_field_names=true`,
+        {
+          method: "PATCH",
+          headers: {
+            Authorization: `Token ${BASEROW_API_TOKEN}`,
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify(payload),
+        }
+      );
+
+      const updateTxt = await updateRes.text();
+
+      if (!updateRes.ok) {
+        console.error("Baserow update error", updateRes.status, updateTxt);
+        return json(
+          {
+            ok: false,
+            error: "Erreur Baserow (update)",
+            status: updateRes.status,
+            body: updateTxt,
+          },
+          500
+        );
+      }
+
+      const updated = JSON.parse(updateTxt);
+      finalRowId = updated.id || existingRow.id;
     } else {
-      // Création
-      const r3 = await fetch(`${api}/api/database/rows/table/${tableId}/?user_field_names=true`, {
-        method: "POST",
-        headers,
-        body: JSON.stringify(payload),
-      });
-      const d3 = await r3.json().catch(() => ({}));
-      if (!r3.ok) return res.status(r3.status).json({ error: d3 });
-      return res.status(200).json({ ok: true, id: d3.id, message: "Activation créée" });
+      // 2b) CREATE sinon
+      const createRes = await fetch(
+        `${BASEROW_API_URL}/api/database/rows/table/${BASEROW_TABLE_ID}/?user_field_names=true`,
+        {
+          method: "POST",
+          headers: {
+            Authorization: `Token ${BASEROW_API_TOKEN}`,
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify(payload),
+        }
+      );
+
+      const createTxt = await createRes.text();
+
+      if (!createRes.ok) {
+        console.error("Baserow create error", createRes.status, createTxt);
+        return json(
+          {
+            ok: false,
+            error: "Erreur Baserow (create)",
+            status: createRes.status,
+            body: createTxt,
+          },
+          500
+        );
+      }
+
+      const created = JSON.parse(createTxt);
+      finalRowId = created.id;
     }
+
+    return json({ ok: true, code, rowId: finalRowId });
   } catch (e) {
-    return res.status(500).json({ error: e.message });
+    console.error("activate error:", e);
+    return json(
+      { ok: false, error: e?.message || String(e) || "Erreur inconnue" },
+      500
+    );
   }
 }
