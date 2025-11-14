@@ -5,12 +5,20 @@
     <title>Basothan MyConnect</title>
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <style>
-      html, body {
+      *,
+      *::before,
+      *::after {
+        box-sizing: border-box;
+      }
+
+      html,
+      body {
         margin: 0;
         padding: 0;
-        font-family: Arial, sans-serif;
+        font-family: system-ui, -apple-system, BlinkMacSystemFont, "SF Pro Text",
+          "Helvetica Neue", Arial, sans-serif;
         background: #f5f5f5;
-        color: #111;
+        color: #111827;
       }
 
       body {
@@ -18,59 +26,343 @@
         display: flex;
         align-items: center;
         justify-content: center;
-        padding: 20px;
+        padding: 24px 16px;
+      }
+
+      .page {
+        width: 100%;
+        max-width: 460px;
+      }
+
+      .logo-row {
+        display: flex;
+        justify-content: flex-start;
+        margin-bottom: 16px;
+      }
+
+      .logo-row img {
+        height: 36px;
       }
 
       .card {
-        text-align: center;
+        width: 100%;
+        border-radius: 32px;
+        background: #ffffff;
+        box-shadow: 0 24px 50px rgba(15, 23, 42, 0.12);
+        padding: 28px 24px 24px;
       }
 
-      img {
-        width: 140px;
-        margin-bottom: 15px;
-        opacity: 0.85;
-      }
-
-      h1 {
+      .card-title {
+        margin: 0 0 6px;
         font-size: 22px;
-        margin: 0 0 10px;
-        letter-spacing: 0.05em;
+        letter-spacing: 0.08em;
         text-transform: uppercase;
       }
 
-      p {
-        margin: 4px 0;
+      .card-subtitle {
+        margin: 0 0 18px;
         font-size: 14px;
-        color: #666;
+        color: #4b5563;
+      }
+
+      .hint-box {
+        background: #f3f4f6;
+        border-radius: 16px;
+        padding: 10px 12px;
+        font-size: 13px;
+        color: #4b5563;
+        margin-bottom: 20px;
+      }
+
+      .field {
+        margin-bottom: 14px;
+      }
+
+      .field label {
+        display: block;
+        font-size: 13px;
+        font-weight: 600;
+        margin-bottom: 4px;
+      }
+
+      .field input {
+        width: 100%;
+        padding: 11px 14px;
+        border-radius: 999px;
+        border: 1px solid #e5e7eb;
+        font-size: 14px;
+        outline: none;
+        transition: border-color 0.15s ease, box-shadow 0.15s ease;
+      }
+
+      .field input:focus {
+        border-color: #df96e7;
+        box-shadow: 0 0 0 2px rgba(223, 150, 231, 0.25);
+      }
+
+      .btn-gradient {
+        width: 100%;
+        margin-top: 12px;
+        padding: 12px 16px;
+        border-radius: 999px;
+        border: none;
+        cursor: pointer;
+        text-transform: uppercase;
+        letter-spacing: 0.08em;
+        font-size: 13px;
+        font-weight: 600;
+        color: #000;
+        background: linear-gradient(120deg, #df96e7, #d2b179);
+        text-decoration: underline;
+      }
+
+      .btn-gradient:disabled {
+        opacity: 0.6;
+        cursor: default;
+      }
+
+      .small {
+        font-size: 12px;
+        color: #6b7280;
+        margin-top: 8px;
+      }
+
+      .error {
+        margin-top: 8px;
+        font-size: 13px;
+        color: #b91c1c;
+      }
+
+      .success {
+        margin-top: 8px;
+        font-size: 13px;
+        color: #166534;
+      }
+
+      /* Loader */
+      .loader-card {
+        text-align: center;
+      }
+
+      .loader-logo {
+        height: 40px;
+        margin-bottom: 18px;
+      }
+
+      .loader-title {
+        margin: 0 0 6px;
+        font-size: 18px;
+        letter-spacing: 0.16em;
+        text-transform: uppercase;
+      }
+
+      .loader-text {
+        margin: 0 0 16px;
+        font-size: 14px;
+        color: #4b5563;
+      }
+
+      .loader-bar {
+        position: relative;
+        width: 100%;
+        height: 6px;
+        border-radius: 999px;
+        background: #e5e7eb;
+        overflow: hidden;
+      }
+
+      .loader-bar::before {
+        content: "";
+        position: absolute;
+        inset: 0;
+        border-radius: inherit;
+        background: linear-gradient(120deg, #df96e7, #d2b179);
+        transform-origin: 0 50%;
+        animation: loading 1.2s infinite;
+      }
+
+      @keyframes loading {
+        0% {
+          transform: translateX(-100%);
+        }
+        50% {
+          transform: translateX(0%);
+        }
+        100% {
+          transform: translateX(100%);
+        }
+      }
+
+      .hidden {
+        display: none;
       }
     </style>
   </head>
-
   <body>
-    <div class="card">
-      <img src="/logo.png" alt="Basothan" />
-      <h1>Redirection…</h1>
-      <p id="status">Veuillez patienter…</p>
+    <div class="page">
+      <div class="logo-row">
+        <img src="/logo.png" alt="Basothan" />
+      </div>
+
+      <!-- Loader (pour plaques déjà configurées) -->
+      <div id="loader-card" class="card loader-card">
+        <img src="/logo.png" alt="Basothan" class="loader-logo" />
+        <h2 class="loader-title">Basothan MyConnect</h2>
+        <p class="loader-text">
+          Redirection vers votre lien personnalisé…
+        </p>
+        <div class="loader-bar"></div>
+        <p class="small">
+          Si rien ne se passe, la plaque n’est peut-être pas encore configurée.
+        </p>
+      </div>
+
+      <!-- Formulaire d’activation (premier scan) -->
+      <div id="activate-card" class="card hidden">
+        <h1 class="card-title">Activer ma plaque</h1>
+        <p class="card-subtitle">
+          Entrez votre <strong>numéro de plaque</strong> et le
+          <strong>lien à ouvrir</strong> (Google, Instagram, site web…).
+        </p>
+
+        <div class="hint-box">
+          Exemple de lien :
+          <br />
+          https://g.page/mon-commerce ou https://instagram.com/moncompte
+        </div>
+
+        <form id="activate-form">
+          <div class="field">
+            <label for="code-input">Numéro de plaque</label>
+            <input
+              id="code-input"
+              name="code"
+              type="text"
+              placeholder="Ex : BT0A9"
+              required
+              readonly
+            />
+          </div>
+
+          <div class="field">
+            <label for="url-input">Lien à ouvrir</label>
+            <input
+              id="url-input"
+              name="url"
+              type="url"
+              placeholder="https://g.page/mon-commerce ou https://instagram.com/..."
+              required
+            />
+          </div>
+
+          <button id="submit-btn" class="btn-gradient" type="submit">
+            Activer
+          </button>
+
+          <p id="form-message" class="small"></p>
+        </form>
+      </div>
     </div>
 
     <script>
       (function () {
-        const status = document.getElementById("status");
+        const loaderCard = document.getElementById("loader-card");
+        const activateCard = document.getElementById("activate-card");
+        const codeInput = document.getElementById("code-input");
+        const form = document.getElementById("activate-form");
+        const submitBtn = document.getElementById("submit-btn");
+        const formMessage = document.getElementById("form-message");
 
+        function showLoader() {
+          loaderCard.classList.remove("hidden");
+          activateCard.classList.add("hidden");
+        }
+
+        function showForm() {
+          loaderCard.classList.add("hidden");
+          activateCard.classList.remove("hidden");
+        }
+
+        // 1) Récupère le code dans l’URL
         const params = new URLSearchParams(window.location.search);
         const code =
           (params.get("code") ||
             params.get("id") ||
             params.get("c") ||
-            "").trim();
+            "").trim().toUpperCase();
 
         if (!code) {
-          status.textContent = "Aucun code détecté.";
+          // Pas de code → on montre juste le formulaire vide
+          codeInput.removeAttribute("readonly");
+          showForm();
           return;
         }
 
-        // ✅ IMPORTANT : on appelle /api/qr (et plus /qr)
-        window.location.href = "/api/qr?code=" + encodeURIComponent(code);
+        codeInput.value = code;
+
+        // 2) Vérifie si la plaque est déjà configurée
+        fetch("/api/qr?code=" + encodeURIComponent(code) + "&info=1")
+          .then((r) => r.json())
+          .then((data) => {
+            if (data && data.ok && data.configured && data.url) {
+              // Plaque déjà configurée → loader + redirection
+              showLoader();
+              setTimeout(() => {
+                window.location.href =
+                  "/api/qr?code=" + encodeURIComponent(code);
+              }, 600);
+            } else {
+              // Pas encore configurée → on affiche le formulaire
+              showForm();
+            }
+          })
+          .catch(() => {
+            // En cas d’erreur API → on laisse l’utilisateur configurer
+            showForm();
+          });
+
+        // 3) Soumission du formulaire d’activation (AJAX)
+        form.addEventListener("submit", function (e) {
+          e.preventDefault();
+          formMessage.textContent = "";
+          formMessage.className = "small";
+
+          submitBtn.disabled = true;
+
+          const fd = new FormData(form);
+
+          fetch("/api/activate", {
+            method: "POST",
+            body: fd,
+          })
+            .then((r) => r.json())
+            .then((data) => {
+              if (data && data.ok) {
+                formMessage.textContent =
+                  "Plaque activée avec succès. Redirection…";
+                formMessage.classList.add("success");
+
+                setTimeout(() => {
+                  showLoader();
+                  setTimeout(() => {
+                    window.location.href =
+                      "/api/qr?code=" + encodeURIComponent(codeInput.value);
+                  }, 600);
+                }, 400);
+              } else {
+                submitBtn.disabled = false;
+                formMessage.textContent =
+                  (data && data.error) || "Une erreur est survenue.";
+                formMessage.classList.add("error");
+              }
+            })
+            .catch((err) => {
+              submitBtn.disabled = false;
+              formMessage.textContent =
+                "Erreur réseau : " + (err && err.message ? err.message : err);
+              formMessage.classList.add("error");
+            });
+        });
       })();
     </script>
   </body>
