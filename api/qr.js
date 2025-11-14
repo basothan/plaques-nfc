@@ -1,86 +1,104 @@
-// /api/qr.js
+// qr.js
+
+export const config = {
+  runtime: "edge",
+};
+
+const BASEROW_API_URL =
+  process.env.BASEROW_API_URL || "https://api.baserow.io";
+
+// On accepte plusieurs noms de variables pour le token, selon ce que tu as déjà
+const BASEROW_API_TOKEN =
+  process.env.BASEROW_API_TOKEN ||
+  process.env.BASEROW_TOKEN ||
+  process.env.BASEROW_API_KEY;
+
+// Table qui contient les plaques (codes + liens)
+const BASEROW_TABLE_ID = process.env.BASEROW_TABLE_ID;
+
+// Normalisation HTTPS
 function normHttps(u = "") {
   if (!u) return u;
   return /^https?:\/\//i.test(u) ? u : `https://${u}`;
 }
 
-function isActiveOui(actif) {
-  // Compat texte ou single_select
-  if (actif == null) return false;
-  if (typeof actif === "string") return actif.trim().toLowerCase() === "oui";
-  if (typeof actif === "object") {
-    // Baserow single_select renvoie souvent un objet { id, value/name, ... } en user_field_names=true
-    const v = (actif.value || actif.name || "").toString().trim().toLowerCase();
-    return v === "oui";
-  }
-  return false;
-}
-
-export default async function handler(req, res) {
+export default async function handler(req) {
   try {
+    const url = new URL(req.url);
     const code =
-      req.query.code?.toString().trim() ||
-      req.query.id?.toString().trim() ||
-      req.query.qrid?.toString().trim();
+      (url.searchParams.get("code") ||
+        url.searchParams.get("id") ||
+        url.searchParams.get("c") ||
+        "").trim().toUpperCase();
 
     if (!code) {
-      return res.status(400).send("Missing parameter: use ?code= or ?id= or ?qrid=");
+      return new Response("Missing ?code", { status: 400 });
     }
 
-    const api = process.env.BASEROW_API_URL || "https://api.baserow.io";
-    const tableId = process.env.BASEROW_TABLE_ID;
-    const token = process.env.BASEROW_TOKEN;
-
-    if (!tableId || !token) {
-      return res
-        .status(500)
-        .send("Server not configured (BASEROW_TABLE_ID / BASEROW_TOKEN missing).");
+    if (!BASEROW_API_TOKEN || !BASEROW_TABLE_ID) {
+      return new Response("Baserow not configured", { status: 500 });
     }
 
-    // --- Pagination illimitée ---
-    async function fetchAllRows() {
-      let out = [];
-      let next = `${api}/api/database/rows/table/${tableId}/?user_field_names=true&size=200`;
-      while (next) {
-        const r = await fetch(next, { headers: { Authorization: `Token ${token}` } });
-        if (!r.ok) {
-          const txt = await r.text().catch(() => "");
-          return res.status(r.status).send(`Baserow error: ${txt}`);
-        }
-        const data = await r.json();
-        out = out.concat(data.results || []);
-        next = data.next;
+    // On cherche la ligne correspondant au code
+    const r = await fetch(
+      `${BASEROW_API_URL}/api/database/rows/table/${BASEROW_TABLE_ID}/?user_field_names=true&search=${encodeURIComponent(
+        code
+      )}&size=1`,
+      {
+        headers: { Authorization: `Token ${BASEROW_API_TOKEN}` },
+        cache: "no-store",
       }
-      return out;
+    );
+
+    if (!r.ok) {
+      const t = await r.text();
+      console.error("Baserow error:", r.status, t);
+      return new Response("Erreur Baserow", { status: 500 });
     }
 
-    const rows = await fetchAllRows();
-    if (!Array.isArray(rows)) return; // réponse déjà envoyée en cas d'erreur
+    const list = await r.json();
+    const row = Array.isArray(list?.results) ? list.results[0] : null;
 
-    // Recherche case-insensitive sur "code_plaque"
-    const found = rows.find((row) => {
-      const v = (row.code_plaque || "").toString().trim().toLowerCase();
-      return v === code.toLowerCase();
+    if (!row) {
+      return new Response("Code inconnu.", { status: 404 });
+    }
+
+    // On essaie de trouver le bon champ lien parmi plusieurs noms possibles
+    const candidates = [
+      "Lien",
+      "URL",
+      "Url",
+      "Lien Google",
+      "Google",
+      "Lien cible",
+    ];
+
+    let target = "";
+    for (const key of candidates) {
+      if (typeof row[key] === "string" && row[key].trim()) {
+        target = row[key].trim();
+        break;
+      }
+    }
+
+    if (!target) {
+      // Code connu mais aucun lien configuré
+      return new Response(
+        "Ce code est enregistré mais aucun lien n’est configuré pour l’instant.",
+        { status: 200 }
+      );
+    }
+
+    const redirectTo = normHttps(target);
+
+    return new Response(null, {
+      status: 302,
+      headers: {
+        Location: redirectTo,
+      },
     });
-
-    if (!found || !found.url_google) {
-      return res
-        .status(404)
-        .send("Code non trouvé ou URL Google manquante dans Baserow.");
-    }
-
-    // Si tu veux forcer l'activation, dé-commente ce bloc :
-    // if (!isActiveOui(found.actif)) {
-    //   return res.status(404).send("Plaque inactive.");
-    // }
-
-    const target = normHttps(found.url_google);
-
-    // 302 Redirect
-    res.statusCode = 302;
-    res.setHeader("Location", target);
-    return res.end();
   } catch (e) {
-    return res.status(500).send(`Server error: ${e.message}`);
+    console.error("qr error:", e);
+    return new Response("Erreur interne", { status: 500 });
   }
 }
