@@ -5,20 +5,12 @@
     <title>Basothan MyConnect</title>
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <style>
-      *,
-      *::before,
-      *::after {
-        box-sizing: border-box;
-      }
-
-      html,
-      body {
+      html, body {
         margin: 0;
         padding: 0;
-        font-family: system-ui, -apple-system, BlinkMacSystemFont, "SF Pro Text",
-          "Helvetica Neue", Arial, sans-serif;
-        background: #0f172a;
-        color: #f9fafb;
+        font-family: Arial, sans-serif;
+        background: #f5f5f5;
+        color: #111;
       }
 
       body {
@@ -26,60 +18,46 @@
         display: flex;
         align-items: center;
         justify-content: center;
-        padding: 24px 16px;
+        padding: 20px;
       }
 
       .card {
-        width: 100%;
-        max-width: 420px;
-        border-radius: 28px;
-        padding: 24px 20px 20px;
-        background: rgba(15, 23, 42, 0.85);
-        border: 1px solid rgba(148, 163, 184, 0.4);
-        box-shadow: 0 18px 40px rgba(0, 0, 0, 0.6);
         text-align: center;
       }
 
-      .logo {
-        height: 28px;
-        margin-bottom: 10px;
+      img {
+        width: 140px;
+        margin-bottom: 15px;
+        opacity: 0.85;
       }
 
       h1 {
-        margin: 0 0 8px;
-        font-size: 18px;
-        letter-spacing: 0.16em;
+        font-size: 22px;
+        margin: 0 0 10px;
+        letter-spacing: 0.05em;
         text-transform: uppercase;
       }
 
       p {
         margin: 4px 0;
         font-size: 14px;
-        color: #cbd5f5;
-      }
-
-      .hint {
-        margin-top: 10px;
-        font-size: 12px;
-        color: #9ca3af;
+        color: #666;
       }
     </style>
   </head>
+
   <body>
     <div class="card">
-      <img src="/logo.png" alt="Basothan" class="logo" />
-      <h1>Basothan MyConnect</h1>
-      <p id="status">Redirection en cours…</p>
-      <p class="hint">
-        Si rien ne se passe, la plaque n’est peut-être pas encore configurée.
-      </p>
+      <img src="/logo.png" alt="Basothan" />
+      <h1>Redirection…</h1>
+      <p id="status">Veuillez patienter…</p>
     </div>
 
     <script>
       (function () {
-        const statusEl = document.getElementById("status");
-        const params = new URLSearchParams(window.location.search);
+        const status = document.getElementById("status");
 
+        const params = new URLSearchParams(window.location.search);
         const code =
           (params.get("code") ||
             params.get("id") ||
@@ -87,14 +65,12 @@
             "").trim();
 
         if (!code) {
-          statusEl.textContent =
-            "Aucun code détecté. Scannez une plaque Basothan pour être redirigé.";
+          status.textContent = "Aucun code détecté.";
           return;
         }
 
-        // Redirection vers la fonction /qr qui s’occupe de parler à Baserow
-        const target = "/qr?code=" + encodeURIComponent(code);
-        window.location.replace(target);
+        // Redirige vers la fonction edge /qr
+        window.location.href = "/qr?code=" + encodeURIComponent(code);
       })();
     </script>
   </body>
