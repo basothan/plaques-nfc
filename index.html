@@ -69,8 +69,8 @@
           return;
         }
 
-        // Redirige vers la fonction edge /qr
-        window.location.href = "/qr?code=" + encodeURIComponent(code);
+        // ✅ IMPORTANT : on appelle /api/qr (et plus /qr)
+        window.location.href = "/api/qr?code=" + encodeURIComponent(code);
       })();
     </script>
   </body>
