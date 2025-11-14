@@ -445,23 +445,23 @@
           </form>
         </section>
 
-        <!-- SECTION MENU -->
+        <!-- SECTION MENU (PDF UNIQUEMENT) -->
         <section id="menu-section" class="hidden">
           <div id="menu-back" class="back-link">Retour au choix</div>
           <h1 class="title">ASSOCIER UN MENU</h1>
           <p class="subtitle">
-            Téléversez un menu au format PDF ou collez le lien vers votre menu
-            existant.
+            Téléversez un fichier PDF qui sera ouvert lorsque le client scanne
+            votre plaque.
           </p>
 
           <div class="info-box">
-            Vous pouvez soit héberger votre PDF (site, Drive, Dropbox, etc.) et
-            coller le lien, soit importer directement le fichier PDF ci-dessous.
+            Sélectionnez le code de votre plaque, puis importez votre fichier
+            <strong>PDF</strong> (menu, carte des boissons, etc.).
           </div>
 
           <div id="menu-alert" class="alert hidden"></div>
 
-          <!-- enctype pour l'upload de fichier -->
+          <!-- enctype obligatoire pour l'upload -->
           <form
             class="form"
             action="/api/menu"
@@ -480,22 +480,13 @@
             </div>
 
             <div class="field">
-              <label for="menu-url">Lien du menu (PDF) – optionnel</label>
-              <input
-                id="menu-url"
-                name="pdfUrl"
-                type="url"
-                placeholder="https://mon-site.com/menu.pdf"
-              />
-            </div>
-
-            <div class="field">
-              <label for="menu-file">Ou importer le fichier PDF</label>
+              <label for="menu-file">Fichier PDF du menu</label>
               <input
                 id="menu-file"
                 name="pdfFile"
                 type="file"
                 accept="application/pdf"
+                required
               />
             </div>
 
