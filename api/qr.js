@@ -14,11 +14,13 @@ const BASEROW_API_TOKEN =
 
 const BASEROW_TABLE_ID = process.env.BASEROW_TABLE_ID;
 
+// Normalise les URL (ajoute https si manquant)
 function normHttps(u = "") {
   if (!u) return u;
   return /^https?:\/\//i.test(u) ? u : `https://${u}`;
 }
 
+// Helper JSON
 function json(data, status = 200) {
   return new Response(JSON.stringify(data, null, 2), {
     status,
@@ -34,7 +36,7 @@ export default async function handler(req) {
         url.searchParams.get("id") ||
         url.searchParams.get("c") ||
         "").trim().toUpperCase();
-    const info = url.searchParams.get("info"); // "1" = mode info
+    const info = url.searchParams.get("info"); // "1" => mode info
 
     if (!code) {
       return info === "1"
@@ -56,11 +58,14 @@ export default async function handler(req) {
         : new Response("Baserow not configured", { status: 500 });
     }
 
-    // On cherche la ligne qui contient ce code_plaque
+    // 🔥 NOUVEAU : on filtre explicitement sur le champ "code_plaque"
+    const params = new URLSearchParams();
+    params.set("user_field_names", "true");
+    params.set("size", "1");
+    params.set("filter__code_plaque__equal", code);
+
     const r = await fetch(
-      `${BASEROW_API_URL}/api/database/rows/table/${BASEROW_TABLE_ID}/?user_field_names=true&search=${encodeURIComponent(
-        code
-      )}&size=1`,
+      `${BASEROW_API_URL}/api/database/rows/table/${BASEROW_TABLE_ID}/?${params.toString()}`,
       {
         headers: { Authorization: `Token ${BASEROW_API_TOKEN}` },
         cache: "no-store",
@@ -88,24 +93,24 @@ export default async function handler(req) {
     const row = Array.isArray(list?.results) ? list.results[0] : null;
 
     if (!row) {
+      // ❌ Aucune ligne avec ce code_plaque
       return info === "1"
         ? json({ ok: false, step: "no_row", configured: false })
         : new Response("Code inconnu.", { status: 404 });
     }
 
-    // ⭐ Ici on utilise tes vrais noms de champs Baserow
+    // Sécurité : on relit le champ depuis la ligne
     const codeFromRow =
       (row["code_plaque"] || row["Code"] || "").toString().toUpperCase();
 
-    // On vérifie que c’est bien la bonne ligne (au cas où)
     if (codeFromRow && codeFromRow !== code) {
-      // sécurité : mauvais enregistrement
+      // Si jamais ça ne match pas, on indique un mismatch
       return info === "1"
         ? json({ ok: false, step: "mismatch", configured: false })
         : new Response("Code inconnu.", { status: 404 });
     }
 
-    // URL cible : on prend d’abord url_google, puis éventuellement qr_url
+    // URL cible : on prend d'abord url_google, sinon qr_url en backup
     let target = "";
     if (typeof row["url_google"] === "string" && row["url_google"].trim()) {
       target = row["url_google"].trim();
@@ -114,7 +119,7 @@ export default async function handler(req) {
     }
 
     if (info === "1") {
-      // Mode info : utilisé par index.html pour savoir si la plaque est configurée
+      // Mode info utilisé par index.html
       return json({
         ok: true,
         code,
