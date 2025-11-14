@@ -34,7 +34,7 @@ export default async function handler(req) {
         url.searchParams.get("id") ||
         url.searchParams.get("c") ||
         "").trim().toUpperCase();
-    const info = url.searchParams.get("info"); // "1" pour mode info
+    const info = url.searchParams.get("info"); // "1" = mode info
 
     if (!code) {
       return info === "1"
@@ -56,6 +56,7 @@ export default async function handler(req) {
         : new Response("Baserow not configured", { status: 500 });
     }
 
+    // On cherche la ligne qui contient ce code_plaque
     const r = await fetch(
       `${BASEROW_API_URL}/api/database/rows/table/${BASEROW_TABLE_ID}/?user_field_names=true&search=${encodeURIComponent(
         code
@@ -92,25 +93,28 @@ export default async function handler(req) {
         : new Response("Code inconnu.", { status: 404 });
     }
 
-    const candidates = [
-      "Lien",
-      "URL",
-      "Url",
-      "Lien Google",
-      "Google",
-      "Lien cible",
-    ];
+    // ⭐ Ici on utilise tes vrais noms de champs Baserow
+    const codeFromRow =
+      (row["code_plaque"] || row["Code"] || "").toString().toUpperCase();
 
+    // On vérifie que c’est bien la bonne ligne (au cas où)
+    if (codeFromRow && codeFromRow !== code) {
+      // sécurité : mauvais enregistrement
+      return info === "1"
+        ? json({ ok: false, step: "mismatch", configured: false })
+        : new Response("Code inconnu.", { status: 404 });
+    }
+
+    // URL cible : on prend d’abord url_google, puis éventuellement qr_url
     let target = "";
-    for (const key of candidates) {
-      if (typeof row[key] === "string" && row[key].trim()) {
-        target = row[key].trim();
-        break;
-      }
+    if (typeof row["url_google"] === "string" && row["url_google"].trim()) {
+      target = row["url_google"].trim();
+    } else if (typeof row["qr_url"] === "string" && row["qr_url"].trim()) {
+      target = row["qr_url"].trim();
     }
 
     if (info === "1") {
-      // Mode info : utilisé par index.html
+      // Mode info : utilisé par index.html pour savoir si la plaque est configurée
       return json({
         ok: true,
         code,
