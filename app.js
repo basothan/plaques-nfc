@@ -1,101 +1,103 @@
-// app.js
-
+// /app.js
 (function () {
-  const homeSection = document.getElementById("home-section");
-  const plaqueSection = document.getElementById("plaque-section");
-  const menuSection = document.getElementById("menu-section");
-
-  const globalCodeInput = document.getElementById("global-code");
-  const plaqueCodeInput = document.getElementById("plaque-code");
-  const menuCodeInput = document.getElementById("menu-code");
-
-  const btnPlaque = document.getElementById("btn-plaque");
-  const btnCard = document.getElementById("btn-card");
-  const btnMenu = document.getElementById("btn-menu");
-
-  const plaqueBack = document.getElementById("plaque-back");
-  const menuBack = document.getElementById("menu-back");
-
-  function show(section) {
-    homeSection.classList.add("hidden");
-    plaqueSection.classList.add("hidden");
-    menuSection.classList.add("hidden");
-
-    if (section === "home") homeSection.classList.remove("hidden");
-    if (section === "plaque") plaqueSection.classList.remove("hidden");
-    if (section === "menu") menuSection.classList.remove("hidden");
-  }
-
-  function syncCodeToForms() {
-    const code = (globalCodeInput.value || "").trim().toUpperCase();
-    if (code && plaqueCodeInput) plaqueCodeInput.value = code;
-    if (code && menuCodeInput) menuCodeInput.value = code;
-  }
-
-  // ----- Boutons -----
-
-  if (btnPlaque) {
-    btnPlaque.addEventListener("click", function () {
-      syncCodeToForms();
-      show("plaque");
-    });
-  }
-
-  if (btnMenu) {
-    btnMenu.addEventListener("click", function () {
-      syncCodeToForms();
-      show("menu");
-    });
-  }
-
-  if (btnCard) {
-    btnCard.addEventListener("click", function () {
-      // Redirection vers la plateforme Cartes de visite
-      window.location.href = "https://macarte.basothan.fr/activate";
-    });
-  }
-
-  if (plaqueBack) {
-    plaqueBack.addEventListener("click", function () {
-      show("home");
-    });
-  }
-
-  if (menuBack) {
-    menuBack.addEventListener("click", function () {
-      show("home");
-    });
-  }
-
-  if (globalCodeInput) {
-    globalCodeInput.addEventListener("input", syncCodeToForms);
-  }
-
-  // ----- Au chargement : récupérer ?code= dans l'URL -----
+  const form = document.getElementById("activationform");
+  const codeInput = document.getElementById("code");
+  const urlInput = document.getElementById("url_google");
+  const statusEl = document.getElementById("status");
+  const okEl = document.getElementById("ok");
+  const prefillBox = document.getElementById("prefillBox");
+  const overlay = document.getElementById("redirectOverlay");
+  const page = document.getElementById("pageContent");
 
   const params = new URLSearchParams(window.location.search);
-  const codeFromUrl = (params.get("code") || "").trim().toUpperCase();
+  const preCode = params.get("code");
 
-  if (codeFromUrl && globalCodeInput) {
-    globalCodeInput.value = codeFromUrl;
-    syncCodeToForms();
+  function showOverlay() {
+    overlay.classList.remove("hidden");
+    overlay.classList.add("flex");
+    if (page) page.style.display = "none";
+  }
 
-    // On tente de résoudre automatiquement (menu ou plaque déjà configuré)
-    fetch("/api/resolve?code=" + encodeURIComponent(codeFromUrl))
-      .then((r) => r.json())
-      .then((data) => {
-        if (data && data.ok && data.url) {
-          // Si déjà configuré → redirection directe vers le bon lien
-          window.location.href = data.url;
+  function hideOverlay() {
+    overlay.classList.add("hidden");
+    overlay.classList.remove("flex");
+    if (page) page.style.display = "block";
+  }
+
+  function normalizeUrl(u) {
+    const s = (u || "").trim();
+    if (!s) return s;
+    return /^https?:\/\//i.test(s) ? s : "https://" + s;
+  }
+
+  // ⚙️ Dès le chargement : vérifie si plaque déjà activée
+  if (preCode) {
+    showOverlay(); // logo affiché immédiatement
+
+    fetch(`/api/debug?id=${encodeURIComponent(preCode)}`)
+      .then(r => r.json())
+      .then(data => {
+        if (data && data.found && data.found.url_google) {
+          // ✅ Plaque déjà activée → redirection directe
+          setTimeout(() => {
+            window.location.href = data.found.url_google;
+          }, 200);
         } else {
-          // Sinon on laisse l'utilisateur choisir quoi faire
-          show("home");
+          // ❌ Plaque non activée → on montre le formulaire
+          hideOverlay();
+          if (codeInput) {
+            codeInput.value = preCode;
+            if (prefillBox) {
+              prefillBox.classList.remove("hidden");
+              prefillBox.textContent = `Numéro détecté : ${preCode}`;
+            }
+          }
         }
       })
-      .catch(() => {
-        show("home");
+      .catch(err => {
+        console.error("Erreur vérif activation:", err);
+        hideOverlay();
       });
   } else {
-    show("home");
+    hideOverlay();
   }
+
+  if (!form) return;
+
+  form.addEventListener("submit", async (e) => {
+    e.preventDefault();
+    if (statusEl) statusEl.textContent = "Activation en cours...";
+    if (okEl) okEl.classList.add("hidden");
+
+    try {
+      const code_plaque = (codeInput?.value || "").trim();
+      const url_google = normalizeUrl(urlInput?.value);
+      if (!code_plaque || !url_google) throw new Error("Champs manquants");
+
+      const res = await fetch("/api/activate", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ code_plaque, url_google }),
+      });
+
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        const msg = data?.error?.detail || data?.error?.message || data?.error || `Erreur ${res.status}`;
+        throw new Error(msg);
+      }
+
+      if (statusEl) statusEl.textContent = "✅ Activation réussie";
+      if (okEl) okEl.classList.remove("hidden");
+      form.reset();
+      okEl.scrollIntoView({ behavior: "smooth", block: "center" });
+
+      // Optionnel : activer redirection auto après activation
+      // showOverlay();
+      // setTimeout(() => window.location.href = `/api/qr?code=${encodeURIComponent(code_plaque)}`, 800);
+
+    } catch (err) {
+      console.error(err);
+      if (statusEl) statusEl.textContent = `❌ ${err.message || "Erreur inconnue"}`;
+    }
+  });
 })();
