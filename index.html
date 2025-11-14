@@ -15,10 +15,9 @@
       body {
         margin: 0;
         padding: 0;
-        font-family: system-ui, -apple-system, BlinkMacSystemFont, "SF Pro Text",
-          "Helvetica Neue", Arial, sans-serif;
-        background: radial-gradient(circle at top, #1f2937, #020617);
-        color: #f9fafb;
+        font-family: system-ui, -apple-system, BlinkMacSystemFont;
+        background: #ffffff; /* FOND BLANC */
+        color: #111;
       }
 
       body {
@@ -31,111 +30,76 @@
 
       .app {
         width: 100%;
-        max-width: 430px;
-        border-radius: 36px;
-        padding: 14px;
-        background: rgba(15, 23, 42, 0.85);
-        box-shadow:
-          0 24px 60px rgba(0, 0, 0, 0.8),
-          0 0 0 1px rgba(148, 163, 184, 0.25);
-        backdrop-filter: blur(22px);
+        max-width: 480px;
       }
 
-      .app-inner {
+      .card {
+        background: #ffffff;
         border-radius: 28px;
-        padding: 22px 18px 18px;
-        background: radial-gradient(circle at top, #020617, #020617);
+        padding: 24px 20px;
+        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.07);
+        margin-bottom: 20px;
       }
 
       .logo-row {
-        display: flex;
-        justify-content: center;
+        text-align: center;
         margin-bottom: 18px;
       }
 
       .logo-row img {
-        height: 32px;
-        opacity: 0.95;
+        height: 38px;
       }
 
-      .card {
-        border-radius: 24px;
-        padding: 22px 18px 18px;
-        background: radial-gradient(circle at top left, #111827, #020617);
-        border: 1px solid rgba(148, 163, 184, 0.4);
-        box-shadow: 0 18px 40px rgba(15, 23, 42, 0.75);
-      }
-
+      /* TITRES */
       .card-title {
-        margin: 0 0 6px;
-        font-size: 18px;
-        letter-spacing: 0.12em;
+        margin: 0 0 10px;
+        font-size: 20px;
+        text-align: center;
+        letter-spacing: 0.10em;
         text-transform: uppercase;
+        font-weight: 700;
       }
 
       .card-subtitle {
-        margin: 0 0 18px;
+        margin: 0 0 20px;
+        text-align: center;
         font-size: 14px;
-        color: #9ca3af;
+        color: #666;
       }
 
-      .hint-box {
-        background: rgba(15, 23, 42, 0.85);
-        border-radius: 16px;
-        padding: 10px 12px;
-        font-size: 13px;
-        color: #e5e7eb;
-        border: 1px solid rgba(55, 65, 81, 0.8);
-        margin-bottom: 18px;
-      }
-
-      .hint-box strong {
-        color: #fbbf24;
-      }
-
+      /* FORM */
       .field {
-        margin-bottom: 14px;
+        margin-bottom: 16px;
       }
 
       .field label {
         display: block;
         font-size: 12px;
         font-weight: 600;
-        margin-bottom: 4px;
-        letter-spacing: 0.08em;
+        margin-bottom: 5px;
         text-transform: uppercase;
-        color: #e5e7eb;
+        color: #333;
       }
 
       .field input {
         width: 100%;
-        padding: 11px 14px;
+        padding: 12px 14px;
         border-radius: 999px;
-        border: 1px solid rgba(75, 85, 99, 0.9);
+        border: 1px solid #ddd;
         font-size: 14px;
         outline: none;
-        background: rgba(15, 23, 42, 0.9);
-        color: #f9fafb;
-        transition:
-          border-color 0.15s ease,
-          box-shadow 0.15s ease,
-          background 0.15s ease;
-      }
-
-      .field input::placeholder {
-        color: rgba(156, 163, 175, 0.9);
+        background: #fff;
       }
 
       .field input:focus {
-        border-color: #f9a8d4;
-        box-shadow: 0 0 0 2px rgba(236, 72, 153, 0.3);
-        background: rgba(15, 23, 42, 0.95);
+        border-color: #d39eea;
+        box-shadow: 0 0 0 2px rgba(211, 158, 234, 0.3);
       }
 
+      /* BUTTON */
       .btn-gradient {
         width: 100%;
-        margin-top: 10px;
-        padding: 12px 16px;
+        padding: 14px 16px;
         border-radius: 999px;
         border: none;
         cursor: pointer;
@@ -143,259 +107,157 @@
         letter-spacing: 0.12em;
         font-size: 12px;
         font-weight: 600;
-        color: #020617;
-        background: linear-gradient(120deg, #f9a8d4, #f97316, #facc15);
+        color: #000;
+        background: linear-gradient(120deg, #df96e7, #d2b179);
         text-decoration: underline;
-        box-shadow:
-          0 10px 25px rgba(248, 113, 113, 0.4),
-          0 0 0 1px rgba(250, 250, 250, 0.1);
-        transition:
-          transform 0.1s ease,
-          box-shadow 0.1s ease,
-          filter 0.1s ease;
-      }
-
-      .btn-gradient:active {
-        transform: translateY(1px);
-        box-shadow:
-          0 6px 16px rgba(248, 113, 113, 0.4),
-          0 0 0 1px rgba(250, 250, 250, 0.08);
-        filter: brightness(0.97);
       }
 
       .btn-gradient:disabled {
         opacity: 0.6;
         cursor: default;
-        box-shadow: none;
       }
 
       .small {
-        font-size: 11px;
-        color: #9ca3af;
-        margin-top: 8px;
+        font-size: 12px;
+        text-align: center;
+        color: #777;
+        margin-top: 12px;
       }
 
       .error {
-        margin-top: 8px;
-        font-size: 12px;
-        color: #fecaca;
+        color: #b3261e;
       }
 
-      .success {
-        margin-top: 8px;
-        font-size: 12px;
-        color: #bbf7d0;
-      }
-
-      .hidden {
-        display: none;
-      }
-
-      /* Loader (plaque déjà configurée) */
-
+      /* LOADER (scan 2) */
       .loader-card {
         text-align: center;
       }
 
       .loader-logo {
         height: 40px;
-        margin-bottom: 18px;
+        margin-bottom: 20px;
       }
 
       .loader-title {
-        margin: 0 0 6px;
         font-size: 16px;
-        letter-spacing: 0.16em;
+        margin-bottom: 8px;
         text-transform: uppercase;
+        letter-spacing: 0.12em;
       }
 
       .loader-text {
-        margin: 0 0 16px;
         font-size: 14px;
-        color: #d1d5db;
+        color: #666;
+        margin-bottom: 20px;
       }
 
       .loader-bar {
-        position: relative;
         width: 100%;
         height: 6px;
         border-radius: 999px;
-        background: rgba(31, 41, 55, 0.9);
+        background: #eee;
         overflow: hidden;
       }
 
       .loader-bar::before {
         content: "";
         position: absolute;
-        inset: 0;
-        border-radius: inherit;
-        background: linear-gradient(120deg, #f9a8d4, #fb923c, #facc15);
-        transform: translateX(-100%);
-        animation: loading 1.3s infinite;
+        width: 40%;
+        height: 100%;
+        left: -40%;
+        background: linear-gradient(120deg, #df96e7, #d2b179);
+        animation: load 1.3s infinite;
       }
 
-      @keyframes loading {
+      @keyframes load {
         0% {
-          transform: translateX(-100%);
-        }
-        50% {
-          transform: translateX(0%);
+          transform: translateX(0);
         }
         100% {
-          transform: translateX(100%);
+          transform: translateX(300%);
         }
       }
 
-      /* Success (app mobile) */
-
+      /* SUCCESS */
       .success-card {
         text-align: center;
-        padding-top: 26px;
-        padding-bottom: 26px;
       }
 
       .success-gif {
         width: 160px;
-        max-width: 60%;
-        border-radius: 32px;
-        margin-bottom: 18px;
-        box-shadow:
-          0 20px 40px rgba(15, 23, 42, 0.9),
-          0 0 0 1px rgba(248, 250, 252, 0.15);
+        margin-bottom: 20px;
       }
 
       .success-title {
-        margin: 0 0 8px;
-        font-size: 18px;
-        letter-spacing: 0.16em;
+        font-size: 20px;
+        margin-bottom: 10px;
         text-transform: uppercase;
+        letter-spacing: 0.10em;
       }
 
       .success-text {
-        margin: 0 0 12px;
         font-size: 14px;
-        color: #e5e7eb;
+        color: #555;
       }
 
-      .success-code {
-        font-size: 12px;
-        color: #fbbf24;
-        letter-spacing: 0.12em;
-        text-transform: uppercase;
-      }
-
-      .success-hint {
-        margin-top: 14px;
-        font-size: 11px;
-        color: #9ca3af;
-      }
-
-      @media (max-width: 480px) {
-        .app {
-          border-radius: 32px;
-          padding: 10px;
-        }
-
-        .app-inner {
-          border-radius: 24px;
-          padding: 18px 14px 14px;
-        }
-
-        .card {
-          border-radius: 20px;
-        }
-
-        .card-title {
-          font-size: 17px;
-        }
+      .hidden {
+        display: none;
       }
     </style>
   </head>
+
   <body>
     <div class="app">
-      <div class="app-inner">
-        <div class="logo-row">
-          <img src="/logo.png" alt="Basothan" />
-        </div>
+      <div class="logo-row">
+        <img src="/logo.png" alt="Basothan" />
+      </div>
 
-        <!-- Loader : plaque déjà configurée -->
-        <div id="loader-card" class="card loader-card hidden">
-          <img src="/logo.png" alt="Basothan" class="loader-logo" />
-          <h2 class="loader-title">Basothan MyConnect</h2>
-          <p class="loader-text">
-            Redirection vers votre lien personnalisé…
-          </p>
-          <div class="loader-bar"></div>
-          <p class="small" style="margin-top: 10px;">
-            Si rien ne se passe, la plaque n’est peut-être pas encore configurée.
-          </p>
-        </div>
+      <!-- Loader (si plaque déjà configurée) -->
+      <div id="loader-card" class="card loader-card hidden">
+        <img src="/logo.png" class="loader-logo" />
+        <h2 class="loader-title">Basothan MyConnect</h2>
+        <p class="loader-text">Redirection en cours...</p>
+        <div class="loader-bar"></div>
+      </div>
 
-        <!-- Formulaire d’activation : premier scan -->
-        <div id="activate-card" class="card hidden">
-          <h1 class="card-title">Activer ma plaque</h1>
-          <p class="card-subtitle">
-            Entrez votre <strong>numéro de plaque</strong> et le
-            <strong>lien à ouvrir</strong> (Google, Instagram, site web…).
-          </p>
+      <!-- Formulaire d'activation -->
+      <div id="activate-card" class="card hidden">
+        <h1 class="card-title">Activer ma plaque</h1>
+        <p class="card-subtitle">
+          Entrez votre lien (Google, Instagram, site web…)
+        </p>
 
-          <div class="hint-box">
-            <strong>Exemples :</strong><br />
-            https://g.page/mon-commerce<br />
-            https://instagram.com/moncompte<br />
-            https://mon-site.fr
+        <form id="activate-form">
+          <div class="field">
+            <label>Numéro de plaque</label>
+            <input id="code-input" name="code" type="text" readonly />
           </div>
 
-          <form id="activate-form">
-            <div class="field">
-              <label for="code-input">Numéro de plaque</label>
-              <input
-                id="code-input"
-                name="code"
-                type="text"
-                placeholder="Ex : BT0A9"
-                required
-                readonly
-              />
-            </div>
+          <div class="field">
+            <label>Lien à ouvrir</label>
+            <input
+              id="url-input"
+              name="url"
+              type="url"
+              placeholder="https://instagram.com/moncompte"
+              required
+            />
+          </div>
 
-            <div class="field">
-              <label for="url-input">Lien à ouvrir</label>
-              <input
-                id="url-input"
-                name="url"
-                type="url"
-                placeholder="https://g.page/mon-commerce ou https://instagram.com/..."
-                required
-              />
-            </div>
+          <button id="submit-btn" class="btn-gradient" type="submit">
+            Activer
+          </button>
+          <p id="form-message" class="small"></p>
+        </form>
+      </div>
 
-            <button id="submit-btn" class="btn-gradient" type="submit">
-              Activer
-            </button>
-
-            <p id="form-message" class="small"></p>
-          </form>
-        </div>
-
-        <!-- Succès : style app mobile, après activation -->
-        <div id="success-card" class="card success-card hidden">
-          <img
-            src="/success.gif"
-            alt="Succès"
-            class="success-gif"
-          />
-          <h2 class="success-title">Plaque configurée</h2>
-          <p class="success-text">
-            Votre plaque est maintenant prête. Vous pouvez la rescanner pour
-            ouvrir directement votre lien.
-          </p>
-          <div id="success-code" class="success-code"></div>
-          <p class="success-hint">
-            Astuce : scannez la plaque avec votre téléphone comme vos clients le
-            feront en situation réelle.
-          </p>
-        </div>
+      <!-- Succès -->
+      <div id="success-card" class="card success-card hidden">
+        <img src="/activation_ok.gif" class="success-gif" />
+        <h2 class="success-title">Plaque configurée</h2>
+        <p class="success-text">
+          Vous pouvez maintenant rescanner votre plaque pour ouvrir votre lien.
+        </p>
       </div>
     </div>
 
@@ -409,7 +271,6 @@
         const form = document.getElementById("activate-form");
         const submitBtn = document.getElementById("submit-btn");
         const formMessage = document.getElementById("form-message");
-        const successCodeEl = document.getElementById("success-code");
 
         function showLoader() {
           loaderCard.classList.remove("hidden");
@@ -423,17 +284,17 @@
           successCard.classList.add("hidden");
         }
 
-        function showSuccess(code) {
+        function showSuccess() {
           loaderCard.classList.add("hidden");
           activateCard.classList.add("hidden");
           successCard.classList.remove("hidden");
 
-          if (successCodeEl) {
-            successCodeEl.textContent = "PLAQ. " + code;
-          }
+          setTimeout(() => {
+            window.location.href = "/?code=" + codeInput.value;
+          }, 1800);
         }
 
-        // 1) Récupérer le code dans l’URL
+        // Récupération du code
         const params = new URLSearchParams(window.location.search);
         const code =
           (params.get("code") ||
@@ -441,42 +302,28 @@
             params.get("c") ||
             "").trim().toUpperCase();
 
-        if (!code) {
-          // Pas de code dans l’URL → on laisse le champ éditable
-          codeInput.removeAttribute("readonly");
-          showForm();
-          return;
-        }
-
         codeInput.value = code;
 
-        // 2) Vérifier si la plaque est déjà configurée
-        fetch("/api/qr?code=" + encodeURIComponent(code) + "&info=1")
+        // Vérifier si configuré
+        fetch("/api/qr?code=" + code + "&info=1")
           .then((r) => r.json())
           .then((data) => {
-            if (data && data.ok && data.configured && data.url) {
-              // Plaque déjà configurée → on montre le loader puis on redirige
+            if (data.ok && data.configured) {
               showLoader();
               setTimeout(() => {
-                window.location.href =
-                  "/api/qr?code=" + encodeURIComponent(code);
+                window.location.href = "/api/qr?code=" + code;
               }, 600);
             } else {
-              // Pas encore configurée → formulaire
               showForm();
             }
           })
-          .catch(() => {
-            showForm();
-          });
+          .catch(() => showForm());
 
-        // 3) Soumission du formulaire
-        form.addEventListener("submit", function (e) {
+        // Soumission
+        form.addEventListener("submit", (e) => {
           e.preventDefault();
-          formMessage.textContent = "";
-          formMessage.className = "small";
-
           submitBtn.disabled = true;
+          formMessage.textContent = "";
 
           const fd = new FormData(form);
 
@@ -486,20 +333,17 @@
           })
             .then((r) => r.json())
             .then((data) => {
-              if (data && data.ok) {
-                formMessage.textContent = "";
-                showSuccess(codeInput.value.trim().toUpperCase());
+              if (data.ok) {
+                showSuccess();
               } else {
                 submitBtn.disabled = false;
-                formMessage.textContent =
-                  (data && data.error) || "Une erreur est survenue.";
+                formMessage.textContent = data.error || "Erreur.";
                 formMessage.classList.add("error");
               }
             })
-            .catch((err) => {
+            .catch(() => {
               submitBtn.disabled = false;
-              formMessage.textContent =
-                "Erreur réseau : " + (err && err.message ? err.message : err);
+              formMessage.textContent = "Erreur réseau.";
               formMessage.classList.add("error");
             });
         });
