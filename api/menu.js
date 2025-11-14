@@ -1,4 +1,6 @@
 // api/menu.js
+
+// On utilise une Edge Function pour avoir accès à Request, FormData, File, etc.
 export const config = {
   runtime: "edge",
 };
@@ -6,18 +8,18 @@ export const config = {
 const BASEROW_API_URL =
   process.env.BASEROW_API_URL || "https://api.baserow.io";
 const BASEROW_API_TOKEN = process.env.BASEROW_API_TOKEN;
-// ⚠️ à créer dans ton .env
-const BASEROW_MENU_TABLE_ID = process.env.BASEROW_MENU_TABLE_ID; 
+// ⚠️ À définir dans Vercel : BASEROW_MENU_TABLE_ID
+const BASEROW_MENU_TABLE_ID = process.env.BASEROW_MENU_TABLE_ID;
 
 export default async function handler(req) {
   if (req.method !== "POST") {
     return new Response("Method not allowed", { status: 405 });
   }
 
-  try:
-  {
+  try {
     const form = await req.formData();
-    const code = (form.get("code") || "").toString().trim();
+
+    const code = (form.get("code") || "").toString().trim().toUpperCase();
     const pdfUrlFromForm = (form.get("pdfUrl") || "").toString().trim();
     const file = form.get("pdfFile");
 
@@ -29,10 +31,10 @@ export default async function handler(req) {
       return new Response("Baserow not configured", { status: 500 });
     }
 
-    let finalPdfUrl = pdfUrlFromForm || "";
+    let finalPdfUrl = pdfUrlFromForm;
 
     // 1) Si un fichier PDF est envoyé, on l'upload vers Baserow
-    if (file && file instanceof File && file.size > 0) {
+    if (file instanceof File && file.size > 0) {
       const fd = new FormData();
       fd.set("file", file, file.name);
 
@@ -59,15 +61,15 @@ export default async function handler(req) {
       finalPdfUrl = uploaded.url;
     }
 
+    // Si pas de lien final → erreur
     if (!finalPdfUrl) {
       return new Response("Vous devez fournir un lien ou un fichier PDF.", {
         status: 400,
       });
     }
 
-    // 2) Création de la ligne dans la table "menus"
-    // Adapte les noms des champs à ta table Baserow :
-    // ex. "Code" (texte) + "Menu PDF" (champ fichier) ou "Lien PDF" (texte)
+    // 2) Enregistrement dans la table Baserow "Menus"
+    // Champs attendus : "Code" (texte) et "Lien PDF" (texte)
     const payload = {
       Code: code,
       "Lien PDF": finalPdfUrl,
@@ -91,7 +93,6 @@ export default async function handler(req) {
       return new Response("Error saving menu", { status: 500 });
     }
 
-    // Tu peux aussi faire une redirection vers une page de succès
     return new Response("Menu enregistré avec succès", { status: 200 });
   } catch (e) {
     console.error("api/menu error:", e);
