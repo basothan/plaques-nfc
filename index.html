@@ -5,7 +5,6 @@
     <title>Basothan MyConnect</title>
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <style>
-      /* ===== RESET ===== */
       *,
       *::before,
       *::after {
@@ -18,486 +17,85 @@
         padding: 0;
         font-family: system-ui, -apple-system, BlinkMacSystemFont, "SF Pro Text",
           "Helvetica Neue", Arial, sans-serif;
-        background: radial-gradient(
-          circle at top left,
-          #f4f0ff,
-          #faf7f5,
-          #e5f3ff
-        );
-        color: #111;
+        background: #0f172a;
+        color: #f9fafb;
       }
 
       body {
-        background-image: none !important;
-      }
-
-      a {
-        color: inherit;
-        text-decoration: none;
-      }
-
-      /* ===== LAYOUT GLOBAL ===== */
-
-      .page {
         min-height: 100vh;
         display: flex;
         align-items: center;
         justify-content: center;
-        padding: 32px 16px;
-        animation: pageFadeIn 0.6s ease-out;
+        padding: 24px 16px;
       }
 
-      .glass-card {
+      .card {
         width: 100%;
-        max-width: 520px;
-        border-radius: 32px;
-        padding: 30px 26px 24px;
-        background: rgba(255, 255, 255, 0.16);
-        border: 1px solid rgba(255, 255, 255, 0.65);
-        backdrop-filter: blur(18px);
-        -webkit-backdrop-filter: blur(18px);
-        box-shadow: 0 18px 45px rgba(15, 23, 42, 0.28),
-          0 0 0 1px rgba(255, 255, 255, 0.14);
-        opacity: 0;
-        transform: translateY(10px);
-        animation: cardSlideUp 0.6s ease-out forwards;
+        max-width: 420px;
+        border-radius: 28px;
+        padding: 24px 20px 20px;
+        background: rgba(15, 23, 42, 0.85);
+        border: 1px solid rgba(148, 163, 184, 0.4);
+        box-shadow: 0 18px 40px rgba(0, 0, 0, 0.6);
+        text-align: center;
       }
 
-      .logo-wrap {
-        display: flex;
-        justify-content: center;
+      .logo {
+        height: 28px;
         margin-bottom: 10px;
       }
 
-      .logo-wrap img {
-        height: 32px;
-      }
-
-      .title {
-        margin: 4px 0 4px;
-        text-align: center;
-        font-size: 22px;
+      h1 {
+        margin: 0 0 8px;
+        font-size: 18px;
         letter-spacing: 0.16em;
         text-transform: uppercase;
       }
 
-      .subtitle {
-        margin: 0 0 18px;
-        text-align: center;
+      p {
+        margin: 4px 0;
         font-size: 14px;
-        color: #444;
+        color: #cbd5f5;
       }
 
-      /* ===== HOME (CHOIX DU PRODUIT) ===== */
-
-      .home-section {
-        display: block;
-      }
-
-      .code-block {
-        margin-bottom: 18px;
-      }
-
-      .code-label {
-        font-size: 13px;
-        font-weight: 600;
-      }
-
-      .code-input {
-        margin-top: 6px;
-        width: 100%;
-        padding: 10px 14px;
-        border-radius: 999px;
-        border: 1px solid rgba(255, 255, 255, 0.7);
-        background: rgba(255, 255, 255, 0.25);
-        outline: none;
-        font-size: 14px;
-        transition: box-shadow 0.15s ease, border-color 0.15s ease,
-          background-color 0.15s ease, transform 0.1s ease;
-      }
-
-      .code-input:focus {
-        border-color: rgba(223, 150, 231, 0.9);
-        background-color: rgba(255, 255, 255, 0.6);
-        box-shadow: 0 0 0 1px rgba(223, 150, 231, 0.4),
-          0 0 0 6px rgba(223, 150, 231, 0.16);
-        transform: translateY(-0.5px);
-      }
-
-      .code-help {
-        margin: 6px 0 0;
-        font-size: 12px;
-        color: #666;
-      }
-
-      .options {
-        display: flex;
-        flex-direction: column;
-        gap: 10px;
+      .hint {
         margin-top: 10px;
-      }
-
-      .option-card {
-        width: 100%;
-        border-radius: 20px;
-        padding: 12px 14px;
-        text-align: left;
-        border: none;
-        cursor: pointer;
-        background: rgba(255, 255, 255, 0.3);
-        backdrop-filter: blur(14px);
-        -webkit-backdrop-filter: blur(14px);
-        box-shadow: 0 10px 25px rgba(15, 23, 42, 0.16);
-        transition: transform 0.15s ease, box-shadow 0.15s ease,
-          background-color 0.15s ease;
-      }
-
-      .option-card:hover {
-        transform: translateY(-2px);
-        box-shadow: 0 18px 35px rgba(15, 23, 42, 0.25);
-        background-color: rgba(255, 255, 255, 0.7);
-      }
-
-      .option-title {
-        display: block;
-        font-size: 14px;
-        font-weight: 700;
-        text-transform: uppercase;
-        letter-spacing: 0.12em;
-      }
-
-      .option-desc {
-        display: block;
-        margin-top: 4px;
-        font-size: 13px;
-        color: #444;
-      }
-
-      .home-footer {
-        margin-top: 18px;
         font-size: 12px;
-        text-align: center;
-        color: #666;
-      }
-
-      /* ===== SECTIONS PLAQUE / MENU ===== */
-
-      .hidden {
-        display: none !important;
-      }
-
-      .back-link {
-        font-size: 12px;
-        color: #555;
-        margin-bottom: 8px;
-        display: inline-flex;
-        align-items: center;
-        gap: 4px;
-        cursor: pointer;
-      }
-
-      .back-link::before {
-        content: "←";
-        font-size: 12px;
-      }
-
-      .info-box {
-        padding: 10px 12px;
-        border-radius: 16px;
-        background: rgba(248, 249, 252, 0.9);
-        font-size: 13px;
-        color: #555;
-        margin-bottom: 14px;
-      }
-
-      .info-box span {
-        font-family: "SF Mono", ui-monospace, Menlo, Monaco, Consolas,
-          "Liberation Mono", "Courier New", monospace;
-      }
-
-      .form {
-        margin-top: 4px;
-      }
-
-      .field {
-        display: flex;
-        flex-direction: column;
-        gap: 4px;
-        margin-bottom: 12px;
-      }
-
-      .field label {
-        font-size: 13px;
-        font-weight: 600;
-      }
-
-      .field input {
-        width: 100%;
-        padding: 10px 14px;
-        border-radius: 999px;
-        border: 1px solid rgba(255, 255, 255, 0.7);
-        background: rgba(255, 255, 255, 0.25);
-        outline: none;
-        font-size: 14px;
-        transition: border-color 0.15s ease, box-shadow 0.15s ease,
-          background-color 0.15s ease, transform 0.1s ease;
-      }
-
-      .field input[type="file"] {
-        border-radius: 16px;
-      }
-
-      .field input:focus {
-        border-color: rgba(223, 150, 231, 0.9);
-        background-color: rgba(255, 255, 255, 0.6);
-        box-shadow: 0 0 0 1px rgba(223, 150, 231, 0.4),
-          0 0 0 6px rgba(223, 150, 231, 0.16);
-        transform: translateY(-0.5px);
-      }
-
-      .btn-gradient {
-        display: inline-flex;
-        align-items: center;
-        justify-content: center;
-        border-radius: 999px;
-        border: none;
-        cursor: pointer;
-        padding: 11px 18px;
-        font-size: 13px;
-        font-weight: 600;
-        letter-spacing: 0.12em;
-        text-transform: uppercase;
-        background-image: linear-gradient(120deg, #df96e7, #d2b179);
-        background-size: 180% 100%;
-        color: #000;
-        text-decoration: underline;
-        box-shadow: 0 10px 24px rgba(15, 23, 42, 0.28);
-        transition: transform 0.15s ease, box-shadow 0.15s ease,
-          background-position 0.2s ease, filter 0.12s ease;
-        width: 100%;
-        margin-top: 8px;
-      }
-
-      .btn-gradient:hover:not(:disabled) {
-        transform: translateY(-1px) scale(1.02);
-        background-position: 100% 0;
-        box-shadow: 0 16px 32px rgba(15, 23, 42, 0.35);
-        filter: brightness(1.03);
-      }
-
-      .btn-gradient:disabled {
-        opacity: 0.6;
-        cursor: default;
-        box-shadow: none;
-      }
-
-      .alert {
-        border-radius: 16px;
-        padding: 10px 12px;
-        font-size: 13px;
-        margin-bottom: 12px;
-      }
-
-      .alert-error {
-        background: rgba(255, 242, 242, 0.96);
-        border: 1px solid rgba(245, 194, 194, 0.98);
-        color: #b3261e;
-      }
-
-      .alert-success {
-        background: rgba(236, 253, 243, 0.96);
-        border: 1px solid rgba(167, 243, 208, 0.98);
-        color: #166534;
-      }
-
-      @media (max-width: 520px) {
-        .glass-card {
-          padding: 24px 18px 20px;
-          border-radius: 26px;
-        }
-
-        .title {
-          font-size: 18px;
-        }
-      }
-
-      /* Animations */
-
-      @keyframes pageFadeIn {
-        from {
-          opacity: 0;
-        }
-        to {
-          opacity: 1;
-        }
-      }
-
-      @keyframes cardSlideUp {
-        from {
-          opacity: 0;
-          transform: translateY(12px);
-        }
-        to {
-          opacity: 1;
-          transform: translateY(0);
-        }
+        color: #9ca3af;
       }
     </style>
   </head>
   <body>
-    <div class="page">
-      <div class="glass-card">
-        <div class="logo-wrap">
-          <img src="/logo.png" alt="Basothan" />
-        </div>
-
-        <!-- SECTION HOME -->
-        <section id="home-section" class="home-section">
-          <h1 class="title">CONFIGURER MON PRODUIT</h1>
-          <p class="subtitle">
-            Choisissez le support à configurer puis suivez les étapes.
-          </p>
-
-          <div class="code-block">
-            <div class="code-label">Code détecté (optionnel)</div>
-            <input
-              id="global-code"
-              class="code-input"
-              type="text"
-              placeholder="Ex : BT0A9"
-            />
-            <p class="code-help">
-              Si vous avez scanné une plaque, le code est déjà pré-rempli.
-            </p>
-          </div>
-
-          <div class="options">
-            <button id="btn-plaque" class="option-card" type="button">
-              <span class="option-title">Plaque / Support</span>
-              <span class="option-desc">
-                Associez un lien (Google, Instagram, site web, etc.) à votre
-                plaque.
-              </span>
-            </button>
-
-            <button id="btn-card" class="option-card" type="button">
-              <span class="option-title">Carte de visite NFC</span>
-              <span class="option-desc">
-                Accédez à la plateforme Basothan Card pour créer votre profil
-                complet.
-              </span>
-            </button>
-
-            <button id="btn-menu" class="option-card" type="button">
-              <span class="option-title">Menu / Carte PDF</span>
-              <span class="option-desc">
-                Téléversez un menu PDF et associez-le à votre plaque.
-              </span>
-            </button>
-          </div>
-
-          <p class="home-footer">
-            Un seul code. Plusieurs usages. Configurez vos supports en quelques
-            secondes.
-          </p>
-        </section>
-
-        <!-- SECTION PLAQUE -->
-        <section id="plaque-section" class="hidden">
-          <div id="plaque-back" class="back-link">Retour au choix</div>
-          <h1 class="title">ACTIVER MA PLAQUE / MON SUPPORT</h1>
-          <p class="subtitle">
-            Entrez votre numéro de plaque et le lien vers votre page
-            (Google, Instagram, site, etc.).
-          </p>
-
-          <div class="info-box">
-            Exemple de lien : <span>https://g.page/mon-commerce</span> ou
-            <span>https://instagram.com/moncompte</span>
-          </div>
-
-          <div id="plaque-alert" class="alert hidden"></div>
-
-          <form class="form" action="/api/activate" method="POST">
-            <div class="field">
-              <label for="plaque-code">Numéro de plaque</label>
-              <input
-                id="plaque-code"
-                name="code"
-                type="text"
-                placeholder="Ex : BT0A9"
-                required
-              />
-            </div>
-
-            <div class="field">
-              <label for="plaque-url">Lien à rediriger</label>
-              <input
-                id="plaque-url"
-                name="url"
-                type="url"
-                placeholder="https://g.page/mon-commerce ou https://instagram.com/..."
-                required
-              />
-            </div>
-
-            <button class="btn-gradient" type="submit">Activer</button>
-          </form>
-        </section>
-
-        <!-- SECTION MENU (PDF UNIQUEMENT) -->
-        <section id="menu-section" class="hidden">
-          <div id="menu-back" class="back-link">Retour au choix</div>
-          <h1 class="title">ASSOCIER UN MENU</h1>
-          <p class="subtitle">
-            Téléversez un fichier PDF qui sera ouvert lorsque le client scanne
-            votre plaque.
-          </p>
-
-          <div class="info-box">
-            Sélectionnez le code de votre plaque, puis importez votre fichier
-            <strong>PDF</strong> (menu, carte des boissons, etc.).
-          </div>
-
-          <div id="menu-alert" class="alert hidden"></div>
-
-          <!-- enctype obligatoire pour l'upload -->
-          <form
-            class="form"
-            action="/api/menu"
-            method="POST"
-            enctype="multipart/form-data"
-          >
-            <div class="field">
-              <label for="menu-code">Numéro de plaque</label>
-              <input
-                id="menu-code"
-                name="code"
-                type="text"
-                placeholder="Ex : BT0A9"
-                required
-              />
-            </div>
-
-            <div class="field">
-              <label for="menu-file">Fichier PDF du menu</label>
-              <input
-                id="menu-file"
-                name="pdfFile"
-                type="file"
-                accept="application/pdf"
-                required
-              />
-            </div>
-
-            <button class="btn-gradient" type="submit">
-              Associer le menu
-            </button>
-          </form>
-        </section>
-      </div>
+    <div class="card">
+      <img src="/logo.png" alt="Basothan" class="logo" />
+      <h1>Basothan MyConnect</h1>
+      <p id="status">Redirection en cours…</p>
+      <p class="hint">
+        Si rien ne se passe, la plaque n’est peut-être pas encore configurée.
+      </p>
     </div>
 
-    <script src="/app.js"></script>
+    <script>
+      (function () {
+        const statusEl = document.getElementById("status");
+        const params = new URLSearchParams(window.location.search);
+
+        const code =
+          (params.get("code") ||
+            params.get("id") ||
+            params.get("c") ||
+            "").trim();
+
+        if (!code) {
+          statusEl.textContent =
+            "Aucun code détecté. Scannez une plaque Basothan pour être redirigé.";
+          return;
+        }
+
+        // Redirection vers la fonction /qr qui s’occupe de parler à Baserow
+        const target = "/qr?code=" + encodeURIComponent(code);
+        window.location.replace(target);
+      })();
+    </script>
   </body>
 </html>
